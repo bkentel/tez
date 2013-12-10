@@ -1,0 +1,11 @@
+{
+    "substitute": "<missing string>"
+  , "fallback": "en"
+  , "default": "en"
+  , "languages": [
+        ["en", "English (General)"]
+      , ["jp", "日本語"]
+      , ["fr", "Français"]
+      , ["de", "Deutsch"]
+    ]
+}

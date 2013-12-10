@@ -1,0 +1,13 @@
+{"bindings": [
+    ["COMMAND::USE",      [["KEY::SPACE"]]]
+  , ["COMMAND::DIR_HERE", [["KEY::NUM_5"]]]
+  , ["COMMAND::DIR_NORTH",    [["KEY::UP"],    ["KEY::NUM_8"]]]
+  , ["COMMAND::DIR_EAST",    [["KEY::RIGHT"], ["KEY::NUM_6"]]]
+  , ["COMMAND::DIR_SOUTH",    [["KEY::DOWN"],  ["KEY::NUM_2"]]]
+  , ["COMMAND::DIR_WEST",    [["KEY::LEFT"],  ["KEY::NUM_4"]]]
+  , ["COMMAND::DIR_NORTH_WEST",   [["KEY::NUM_7"]]]
+  , ["COMMAND::DIR_NORTH_EAST",   [["KEY::NUM_9"]]]
+  , ["COMMAND::DIR_SOUTH_WEST",   [["KEY::NUM_1"]]]
+  , ["COMMAND::DIR_SOUTH_EAST",   [["KEY::NUM_3"]]]
+
+]}

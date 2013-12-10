@@ -1,0 +1,47 @@
+{
+    "file_id": "entity"
+    
+  , "family": [
+        {
+            "id": "humanoid"
+          , "name": [
+                ["en", "Humanoid"]
+              , ["jp", "人型"]
+            ]
+          , "description": [
+                ["en", "A roughly human looking creature."]
+              , ["jp", "だいたい人間のような形をしている生き物。"]
+            ]
+        }
+    ]
+
+  , "species": [
+        {
+            "id": "orc"
+          , "name": [
+                ["en", "Orc"]
+              , ["jp", "オルク"]          
+            ]
+          , "description": [
+                ["en", "A brutal beast like creature that thirsts for blood and chaos."]
+              , ["jp", "大混乱を起したり血を流したりするのを生きがいとする残酷な生き物。"]
+            ]
+          , "resistance": {"light": 2.0, "dark": 0.5}
+        }
+    ]    
+
+  , "entity": [
+        {
+            "variety": ["humanoid", "orc", "black"]
+          , "name": [
+                ["en", "Black orc"]
+              , ["jp", "黒オルク"]
+            ]
+          , "description": [
+                ["en", "A fierce black skinned orc."]
+              , ["jp", "獰猛な真っ黒なオルク。"]
+            ]
+        }
+    ]
+}
+

@@ -1,0 +1,31 @@
+{
+  　　"tile_size"　: 32
+  , "file_name"　: "./data/tiles.png"
+  , "color_key"　: [255, 0, 255]
+  , "tiles": [
+        [   "DUNGEON"
+          , "FLOOR"
+          , "SIMPLE"
+          , [0, 0]
+          , 80
+          , [   ["en", "Floor"]
+              , ["jp", "床"]
+            ]
+          , [   ["en", "A simple stone floor."]
+              , ["jp", "特徴のない石でできた床。"]
+            ]
+        ]
+      , [   "DUNGEON"
+          , "FLOOR"
+          , "DIRTY"
+          , [0, 1]
+          , 5
+          , [   ["en", "Dirty floor"]
+              , ["jp", "汚れた床"]
+            ]
+          , [   ["en", "A patch of stone floor smeared with mud and dirt."]
+              , ["jp", "土と泥にまみれた床の一部。"]
+            ]
+        ]        
+    ]
+}
