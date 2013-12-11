@@ -1,4 +1,5 @@
 #include <bklib/window.hpp>
+#include <bklib/math.hpp>
 
 class game_main {
 public:

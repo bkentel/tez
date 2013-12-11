@@ -24,5 +24,8 @@
     <ClCompile Include="main_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gui_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -88,6 +88,7 @@
     <ClInclude Include="algorithms.hpp" />
     <ClInclude Include="commands.hpp" />
     <ClInclude Include="grid2d.hpp" />
+    <ClInclude Include="gui.hpp" />
     <ClInclude Include="hotkeys.hpp" />
     <ClInclude Include="languages.hpp" />
     <ClInclude Include="pch.hpp" />
