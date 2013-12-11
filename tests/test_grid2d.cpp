@@ -1,7 +1,5 @@
-#include "pch.hpp"
-
 #include <gtest/gtest.h>
-#include "game/grid2d.hpp"
+#include "grid2d.hpp"
 
 TEST(Grid2d, Sanity) {
     using grid = tez::grid2d<std::string>;
@@ -78,7 +76,7 @@ TEST(Grid2d, Swap) {
 
 //==============================================================================
 
-#include "game/room.hpp"
+#include "room.hpp"
 
 TEST(Room, SimpleRoom) {
     using namespace tez;

@@ -15,40 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="algorithms.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="commands.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="grid2d.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="hotkeys.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="languages.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="room.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tile_data.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tile_set.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="impl\pch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="impl\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="impl\pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

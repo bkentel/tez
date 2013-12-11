@@ -2,14 +2,12 @@
 
 #include <string>
 #include <boost/container/flat_map.hpp>
-#include "types.hpp"
-#include "json.hpp"
+#include <bklib/types.hpp>
+#include <bklib/json.hpp>
 
 namespace tez {
 
 using bklib::utf8string;
-using bklib::string_hasher;
-
 using language_id = uint8_t;
 
 BK_CONSTEXPR static language_id const INVALID_LANG_ID {0};

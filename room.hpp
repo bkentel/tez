@@ -1,11 +1,11 @@
 #pragma once
 
-#include "config.hpp"
-#include "assert.hpp"
+#include <bklib/config.hpp>
+#include <bklib/assert.hpp>
 
-#include "math.hpp"
+#include <bklib/math.hpp>
+
 #include "algorithms.hpp"
-
 #include "tile_data.hpp"
 #include "grid2d.hpp"
 
@@ -26,9 +26,8 @@ public:
     room& operator=(room const&) = delete;
 
     //Move operators
-    room(room&& other);
-    room& operator=(room&& rhs);
-    void swap(room& other);
+    room(room&& other) = default;
+    room& operator=(room&& rhs) = default;
 
     room(index_t w, index_t h, tile_data value = tile_data{});
 };

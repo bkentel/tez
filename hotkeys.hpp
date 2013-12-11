@@ -1,8 +1,8 @@
 #pragma once
 
-#include "keyboard.hpp"
-#include "json_forward.hpp"
-#include "types.hpp"
+#include <bklib/keyboard.hpp>
+#include <bklib/json_forward.hpp>
+#include <bklib/types.hpp>
 #include "commands.hpp"
 
 namespace tez {
@@ -33,7 +33,7 @@ public:
     command_type     rule_command(      cref json_command);
     void             rule_combo_list(   cref json_combo_list);
     bklib::key_combo rule_combo(        cref json_combo);
-    bklib::keys      rule_key(          cref json_key);
+    bklib::keycode   rule_key(          cref json_key);
 
     operator map_t&&() && {
         return std::move(bindings_);
@@ -60,7 +60,7 @@ struct hotkeys {
 
     static command_type translate(key_combo const& combo);
     static command_type translate(utf8string const& name);
-    static command_type translate(bklib::hash name);
+    static command_type translate(bklib::hash_t name);
 };
 
 } //namespace tez

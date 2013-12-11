@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types.hpp"
-#include "math.hpp"
+#include <bklib/types.hpp>
+#include <bklib/math.hpp>
 
 namespace tez {
 

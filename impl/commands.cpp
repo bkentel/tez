@@ -1,11 +1,10 @@
-#include "pch.hpp"
 #include "commands.hpp"
-#include "util.hpp"
+#include <bklib/util.hpp>
 
 using boost::container::flat_map;
 using bklib::string_ref;
 using bklib::utf8string;
-using bklib::hash;
+using bklib::hash_t;
 using tez::command_type;
 
 namespace {
@@ -20,7 +19,7 @@ namespace local_state {
     auto const size = static_cast<size_t>(command_type::SIZE);
 
     std::array<string_ref, size> command_strings;
-    flat_map<hash, command_type> hash_to_command_map;
+    flat_map<hash_t, command_type> hash_to_command_map;
     //--------------------------------------------------------------------------
     template <size_t N>
     static void add_string(command_type const type, char const (&name)[N]) {
@@ -28,7 +27,7 @@ namespace local_state {
         command_strings[i] = bklib::string_ref {name, N};
     }
     //--------------------------------------------------------------------------
-    static void add_hash(command_type const type, bklib::hash const hash) {
+    static void add_hash(command_type const type, bklib::hash_t const hash) {
         auto result = hash_to_command_map.insert(std::make_pair(hash, type));
         BK_ASSERT(result.second && "hash collision");
     }
@@ -79,7 +78,7 @@ command_type tez::to_command(bklib::utf8string const& string) {
     return tez::to_command(bklib::utf8string_hash(string));
 }
 
-command_type tez::to_command(bklib::hash hash) {
+command_type tez::to_command(bklib::hash_t hash) {
     local_state::init();
 
     return bklib::find_or(

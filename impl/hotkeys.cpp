@@ -1,14 +1,27 @@
-#include "pch.hpp"
 #include "hotkeys.hpp"
-#include "json.hpp"
+#include <bklib/json.hpp>
 
 using bklib::utf8string;
-using bklib::hash;
+using bklib::hash_t;
 using bklib::key_combo;
 using tez::command_type;
 using tez::hotkeys;
 
 namespace json = bklib::json;
+
+BK_DEFINE_EXCEPTION_INFO(info_rule_trace, std::vector<bklib::string_ref>);
+namespace {
+void add_rule_exception_info(json::error::base& e, bklib::string_ref rule) {
+    auto const ptr = boost::get_error_info<info_rule_trace>(e);
+
+    if (ptr) {
+        ptr->push_back(rule);
+    } else {
+        e << info_rule_trace{{rule}};
+    }
+}
+} //namespace
+
 ////////////////////////////////////////////////////////////////////////////////
 utf8string const tez::hotkeys::DEFAULT_FILE_NAME = {"./data/bindings.def"};
 //------------------------------------------------------------------------------
@@ -23,7 +36,7 @@ using flat_map = boost::container::flat_map<K, V>;
 bool initialized = false;
 
 flat_map<key_combo, command_type> combo_to_command;
-flat_map<hash,      command_type> hash_to_command;
+flat_map<hash_t,    command_type> hash_to_command;
 ////////////////////////////////////////////////////////////////////////////////
 
 void init() {
@@ -46,7 +59,7 @@ command_type hotkeys::translate(key_combo const& combo) {
     return bklib::find_or(local_state::combo_to_command, combo, command_type::NONE);
 }
 //------------------------------------------------------------------------------
-command_type hotkeys::translate(bklib::hash name) {
+command_type hotkeys::translate(bklib::hash_t name) {
     if (!local_state::initialized) local_state::init();
     return bklib::find_or(local_state::hash_to_command, name, command_type::NONE);
 }
@@ -75,17 +88,7 @@ void hotkeys::reload(std::istream& in) {
 // tez::bindings_parser
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
-namespace {
-void add_rule_exception_info(json::error::base& e, utf8string const& rule) {
-    auto const ptr = boost::get_error_info<json::error::info_location>(e);
 
-    if (ptr) {
-        ptr->insert(0, rule);
-    } else {
-        e << json::error::info_location(rule);
-    }
-}
-} //namespace
 //------------------------------------------------------------------------------
 tez::bindings_parser::bindings_parser(utf8string const& file_name)
   : bindings_parser {std::ifstream {file_name}}
@@ -211,7 +214,7 @@ bklib::key_combo tez::bindings_parser::rule_combo(cref json_combo) {
 
         json::for_each_element_skip_on_fail(json_combo, [&](cref json_key) {
             auto const key = rule_key(json_key);
-            if (key == bklib::keys::NONE) {
+            if (key == bklib::keycode::NONE) {
                 BK_DEBUG_BREAK(); //TOOO
             }
 
@@ -228,7 +231,7 @@ bklib::key_combo tez::bindings_parser::rule_combo(cref json_combo) {
     }
 }
 //------------------------------------------------------------------------------
-bklib::keys tez::bindings_parser::rule_key(cref json_key) {
+bklib::keycode tez::bindings_parser::rule_key(cref json_key) {
     try {
         auto const key_string = json::require_string(json_key);
         auto const key = bklib::keyboard::key_code(key_string);

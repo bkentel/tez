@@ -4,9 +4,9 @@
 
 #include <boost/iterator/iterator_adaptor.hpp>
 
-#include "config.hpp"
-#include "assert.hpp"
-#include "math.hpp"
+#include <bklib/config.hpp>
+#include <bklib/assert.hpp>
+#include <bklib/math.hpp>
 
 namespace tez {
 

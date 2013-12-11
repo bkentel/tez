@@ -5,14 +5,13 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bklib", "..\bklib\bklib.vcxproj", "{B5BBB55E-5F20-4361-8D25-2BEA68CA2672}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tez", "tez.vcxproj", "{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B5BBB55E-5F20-4361-8D25-2BEA68CA2672} = {B5BBB55E-5F20-4361-8D25-2BEA68CA2672}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bklib_tests", "..\bklib\tests\bklib_tests.vcxproj", "{0E788C91-CC71-4445-A6A5-B09F620E4613}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tez_tests", "tests\tez_tests.vcxproj", "{43497F5A-7255-4067-BC38-4ED89B640A0A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tez_lib", "tez_lib.vcxproj", "{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tez", "tez.vcxproj", "{F2E9F7A6-ADC1-41DB-970D-9D03A029F4AC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,8 +23,6 @@ Global
 		{B5BBB55E-5F20-4361-8D25-2BEA68CA2672}.Debug|Win32.Build.0 = Debug|Win32
 		{B5BBB55E-5F20-4361-8D25-2BEA68CA2672}.Release|Win32.ActiveCfg = Release|Win32
 		{B5BBB55E-5F20-4361-8D25-2BEA68CA2672}.Release|Win32.Build.0 = Release|Win32
-		{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}.Release|Win32.ActiveCfg = Release|Win32
 		{0E788C91-CC71-4445-A6A5-B09F620E4613}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0E788C91-CC71-4445-A6A5-B09F620E4613}.Debug|Win32.Build.0 = Debug|Win32
 		{0E788C91-CC71-4445-A6A5-B09F620E4613}.Release|Win32.ActiveCfg = Release|Win32
@@ -34,6 +31,14 @@ Global
 		{43497F5A-7255-4067-BC38-4ED89B640A0A}.Debug|Win32.Build.0 = Debug|Win32
 		{43497F5A-7255-4067-BC38-4ED89B640A0A}.Release|Win32.ActiveCfg = Release|Win32
 		{43497F5A-7255-4067-BC38-4ED89B640A0A}.Release|Win32.Build.0 = Release|Win32
+		{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}.Debug|Win32.Build.0 = Debug|Win32
+		{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}.Release|Win32.ActiveCfg = Release|Win32
+		{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}.Release|Win32.Build.0 = Release|Win32
+		{F2E9F7A6-ADC1-41DB-970D-9D03A029F4AC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F2E9F7A6-ADC1-41DB-970D-9D03A029F4AC}.Debug|Win32.Build.0 = Debug|Win32
+		{F2E9F7A6-ADC1-41DB-970D-9D03A029F4AC}.Release|Win32.ActiveCfg = Release|Win32
+		{F2E9F7A6-ADC1-41DB-970D-9D03A029F4AC}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "json.hpp"
-#include "math.hpp"
+#include <bklib/json.hpp>
+#include <bklib/math.hpp>
+
 #include "languages.hpp"
 #include "tile_data.hpp"
 
@@ -53,7 +54,6 @@ public:
     void rule_theme(cref json_root);
     void rule_type(cref json_root);
     void rule_variation(cref json_root);
-    void rule_location(cref json_root);
     void rule_location(cref json_root);
     void rule_weight(cref json_root);
     void rule_name(cref json_root);

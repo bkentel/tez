@@ -23,6 +23,16 @@ public:
         window_.listen(bklib::on_mouse_up{
             bind(&game_main::on_mouse_up, this, _1, _2)
         });
+
+        window_.listen(bklib::on_keydown{
+            bind(&game_main::on_keydown, this, _1, _2)
+        });
+        window_.listen(bklib::on_keyup{
+            bind(&game_main::on_keyup, this, _1, _2)
+        });
+        window_.listen(bklib::on_keyrepeat{
+            bind(&game_main::on_keyrepeat, this, _1, _2)
+        });
     }
 
     int run() {
@@ -45,6 +55,14 @@ public:
     void on_mouse_up(bklib::mouse& mouse, unsigned button) {
         std::cout << "on_mouse_up:" << " button = " << button << std::endl;
     }
+
+    void on_keydown(bklib::keyboard& keyboard, bklib::keycode key) {
+    }
+    void on_keyup(bklib::keyboard& keyboard, bklib::keycode key) {
+    }
+    void on_keyrepeat(bklib::keyboard& keyboard, bklib::keycode key) {
+    }
+
 private:
     bklib::platform_window window_;
 };

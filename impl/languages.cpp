@@ -1,5 +1,8 @@
-#include "pch.hpp"
 #include "languages.hpp"
+
+#include <bklib/types.hpp>
+#include <bklib/macros.hpp>
+#include <bklib/util.hpp>
 
 using bklib::utf8string;
 using tez::language_id;
@@ -54,7 +57,7 @@ language_info::info const& language_info::get_info(
 language_info::info const& language_info::get_info(
     utf8string const& lang
 ) {
-    return get_info(string_hasher{}(lang));
+    return get_info(bklib::utf8string_hash(lang));
 }
 
 bool language_info::is_defined(hash const lang) {

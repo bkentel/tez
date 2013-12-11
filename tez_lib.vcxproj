@@ -11,19 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F2E9F7A6-ADC1-41DB-970D-9D03A029F4AC}</ProjectGuid>
+    <ProjectGuid>{D4A9968E-6C6C-463E-BED5-483ABF50FAF8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>tez</RootNamespace>
+    <RootNamespace>tez_lib</RootNamespace>
+    <ProjectName>tez_lib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -41,20 +42,18 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(ProjectDir)\build\tez\$(Configuration)\</IntDir>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(ProjectDir)\build\tez\$(Configuration)\</IntDir>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <ForcedIncludeFiles>pch.hpp</ForcedIncludeFiles>
       <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -64,14 +63,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <ForcedIncludeFiles>pch.hpp</ForcedIncludeFiles>
+      <MinimalRebuild>true</MinimalRebuild>
       <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -82,19 +80,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="tez_lib.vcxproj">
-      <Project>{d4a9968e-6c6c-463e-bed5-483abf50faf8}</Project>
+    <ProjectReference Include="..\bklib\bklib.vcxproj">
+      <Project>{b5bbb55e-5f20-4361-8d25-2bea68ca2672}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="impl\main.cpp" />
+    <ClInclude Include="algorithms.hpp" />
+    <ClInclude Include="commands.hpp" />
+    <ClInclude Include="grid2d.hpp" />
+    <ClInclude Include="hotkeys.hpp" />
+    <ClInclude Include="languages.hpp" />
+    <ClInclude Include="pch.hpp" />
+    <ClInclude Include="room.hpp" />
+    <ClInclude Include="tile_data.hpp" />
+    <ClInclude Include="tile_set.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="impl\commands.cpp" />
+    <ClCompile Include="impl\hotkeys.cpp" />
+    <ClCompile Include="impl\languages.cpp" />
     <ClCompile Include="impl\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="pch.hpp" />
+    <ClCompile Include="impl\room.cpp" />
+    <ClCompile Include="impl\tile_set.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

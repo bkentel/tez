@@ -1,6 +1,5 @@
-#include "pch.hpp"
-
 #include "room.hpp"
+#include <bklib/macros.hpp>
 
 //==============================================================================
 using random = tez::random;
@@ -14,22 +13,6 @@ room::room(
 )
   : grid2d(w, h, value)
 {
-}
-
-room::room(room&& other)
-  : grid2d(std::move(other))
-{
-}
-
-room& room::operator=(room&& rhs)
-{
-    rhs.swap(*this);
-    return *this;
-}
-
-void room::swap(room& other) {
-    using std::swap;
-    swap(*this, other);
 }
 
 //==============================================================================

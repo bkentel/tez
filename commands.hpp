@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.hpp"
+#include <bklib/types.hpp>
 
 namespace tez {
 //==============================================================================
@@ -27,6 +27,6 @@ enum class command_type {
 bklib::string_ref to_string(command_type type);
 //------------------------------------------------------------------------------
 command_type      to_command(bklib::utf8string const& string);
-command_type      to_command(bklib::hash hash);
+command_type      to_command(bklib::hash_t hash);
 //------------------------------------------------------------------------------
 } //namespace tez
