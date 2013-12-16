@@ -95,6 +95,8 @@ public:
     virtual bounding_box bounds() const {
         return bounding_box {};
     }
+
+    virtual void resize(bounding_box size) {}
 protected:
     widget_base*      parent_;
     bklib::utf8string name_;
@@ -318,8 +320,8 @@ public:
       , top          = 1 << 1
       , right        = 1 << 2
       , bottom       = 1 << 3
-      , top_left     = top | left
-      , top_right    = top | right
+      , top_left     = top    | left
+      , top_right    = top    | right
       , botttom_left = bottom | left
       , bottom_right = bottom | right
     };
@@ -332,44 +334,162 @@ public:
     {
     }
 
-    void on_mouse_down(mouse& m, scalar x, scalar y, unsigned button);
-    void on_mouse_up(mouse& m, scalar x, scalar y, unsigned button);
-    void on_mouse_move(mouse& m, scalar dx, scalar dy);
-    void on_mouse_move_to(mouse& m, scalar x, scalar y);
+    bool is_sizing() const {
+        return state_ != state::none;
+    }
 
-    void on_mouse_enter(mouse& m, scalar x, scalar y) {
+    bool state_contains(state const s) const {
+        using type = std::underlying_type_t<state>;
+        return (static_cast<type>(state_) & static_cast<type>(s)) != 0;
+    }
+
+    void on_mouse_down(mouse& m, scalar x, scalar y, unsigned button) {
+        if (button != 0) return;
+
         BK_ASSERT(state_ == state::none);
         
         auto const& bounds = widget_.bounds();
 
-        scalar const dl = x - bounds.left();
-        scalar const dt = y - bounds.top();
-        scalar const dr = bounds.right()  - x;
-        scalar const db = bounds.bottom() - y;
+        scalar const dl =  (x - bounds.left()   );
+        scalar const dt =  (y - bounds.top()    );
+        scalar const dr = -(x - bounds.right()  );
+        scalar const db = -(y - bounds.bottom() );
 
         bool const is_l = dl >= 0 && dl < WIDTH;
         bool const is_t = dt >= 0 && dt < WIDTH;
         bool const is_r = dr >= 0 && dr < WIDTH;
         bool const is_b = db >= 0 && db < WIDTH;
 
-        BK_ASSERT(is_l ^ is_r);
-        BK_ASSERT(is_t ^ is_b);
+        BK_ASSERT(!(is_l || is_r) || is_l ^ is_r);
+        BK_ASSERT(!(is_t || is_b) || is_t ^ is_b);
 
         size_t const value = 
-            (dl ? bklib::get_enum_value(state::left)   : 0)
-          | (dt ? bklib::get_enum_value(state::top)    : 0)
-          | (dr ? bklib::get_enum_value(state::right)  : 0)
-          | (db ? bklib::get_enum_value(state::bottom) : 0);
+            (is_l ? bklib::get_enum_value(state::left)   : 0)
+          | (is_t ? bklib::get_enum_value(state::top)    : 0)
+          | (is_r ? bklib::get_enum_value(state::right)  : 0)
+          | (is_b ? bklib::get_enum_value(state::bottom) : 0);
 
         state_ = static_cast<state>(value);
+
+        if (state_ != state::none) {
+            track_mouse_input(&widget_, true);
+        }
     }
 
-    void on_mouse_exit(mouse& m, scalar x, scalar y) {
+    void on_mouse_up(mouse& m, scalar x, scalar y, unsigned button) {
+        if (button != 0) return;
+        if (state_ == state::none) return;
+
         state_ = state::none;
+        track_mouse_input(&widget_, false);
+    }
+
+    void on_mouse_move_to(mouse& m, scalar x, scalar y) {
+        if (state_ == state::none) return;
+
+        auto BK_CONSTEXPR MIN_W = 16;
+        auto BK_CONSTEXPR MIN_H = 16;
+
+        auto const last_mouse = m.absolute(1);
+
+        auto const old = bklib::make_point2d<scalar, scalar>(last_mouse.x, last_mouse.y);
+        auto const cur = bklib::make_point2d<scalar, scalar>(x, y);
+        auto const delta = cur - old;
+
+        auto const bounds = widget_.bounds();
+        auto l = bounds.left();
+        auto t = bounds.top();
+        auto r = bounds.right();
+        auto b = bounds.bottom();
+
+        auto const off_l = x - l;
+        auto const off_t = y - t;
+        auto const off_r = x - r;
+        auto const off_b = y - b;
+
+        auto const adjust_l = [&] { if (r - l < MIN_W) l = r - MIN_W; };
+        auto const adjust_t = [&] { if (b - t < MIN_H) t = b - MIN_H; };
+        auto const adjust_r = [&] { if (r - l < MIN_W) r = l + MIN_W; };
+        auto const adjust_b = [&] { if (b - t < MIN_W) b = t + MIN_H; };
+
+        auto const update_side = [](scalar& side, scalar const delta, scalar const offset) {
+            if      (delta > 0 && offset > 0) side += delta;
+            else if (delta < 0 && offset < 0) side += delta;        
+        };
+
+        if (state_contains(state::left)) {
+            update_side(l, delta.x, off_l);
+            adjust_l();
+        } else if (state_contains(state::right)) {
+            update_side(r, delta.x, off_r);
+            adjust_r();
+        }
+
+        if (state_contains(state::top)) {
+            update_side(t, delta.y, off_t);
+            adjust_t();
+        } else if (state_contains(state::bottom)) {
+            update_side(b, delta.y, off_b);
+            adjust_b();
+        }        
+
+        auto const new_bounds = bounding_box{l, t, r, b};
+        widget_.resize(new_bounds);
     }
 private:
     widget_base& widget_;
     state        state_;
+};
+
+class mover {
+public:
+    using mouse = bklib::mouse;
+
+    explicit mover(widget_base& widget)
+        : widget_{widget}
+    {
+    }
+
+    bool is_moving() const {
+        return moving_;
+    }
+
+    void on_mouse_down(mouse& m, scalar x, scalar y, unsigned button) {
+        if (button != 0) return;
+        BK_ASSERT(!moving_);
+
+        moving_ = true;
+        track_mouse_input(&widget_, true);
+    }
+
+    void on_mouse_up(mouse& m, scalar x, scalar y, unsigned button) {
+        if (button != 0) return;
+        if (moving_ == false) return;
+
+        moving_ = false;
+        track_mouse_input(&widget_, false);
+    }
+
+    void on_mouse_move_to(mouse& m, scalar x, scalar y) {
+        if (!moving_) return;
+
+        auto const last_mouse = m.absolute(1);
+
+        auto const old = bklib::make_point2d<scalar, scalar>(last_mouse.x, last_mouse.y);
+        auto const cur = bklib::make_point2d<scalar, scalar>(x, y);
+        auto const delta = cur - old;
+
+        auto const bounds = widget_.bounds();
+        auto const p = bounding_box::tl_point{
+            bounds.top_left() + delta
+        };
+
+        bounding_box const new_bounds {p, bounds.width(), bounds.height()};
+        widget_.resize(new_bounds);
+    }
+private:
+    widget_base& widget_;
+    bool         moving_ = false;
 };
 
 class canvas : public widget_base {
@@ -377,101 +497,50 @@ public:
     using widget_base::widget_base;
 
     virtual void on_mouse_down(bklib::mouse& mouse, scalar x, scalar y, unsigned button) {
-        BK_ASSERT(!sizing_);
-        BK_ASSERT(size_x_ == 0);
-        BK_ASSERT(size_y_ == 0);
-
-        auto const dl = x - bounds_.left();
-        auto const dr = bounds_.right() - x;
-        auto const dt = y - bounds_.top();
-        auto const db = bounds_.bottom() - y;
-
-        auto check_range = [](int const value) {
-            return value >= 0 && value < 8;
-        };
-
-        if (check_range(dl)) {
-            size_x_ = -1;
-        } else if (check_range(dr)) {
-            size_x_ = 1;
+        if (!mover_.is_moving()) {
+            frame_.on_mouse_down(mouse, x, y, button);
         }
-
-        if (check_range(dt)) {
-            size_y_ = -1;
-        } else if (check_range(db)) {
-            size_y_ = 1;
-        }
-
-        if (size_x_ || size_y_) {
-            sizing_ = true;
-            track_mouse_input(this, true);
+        if (!frame_.is_sizing()) {
+            mover_.on_mouse_down(mouse, x, y, button);
         }
     }
 
     virtual void on_mouse_up(bklib::mouse& mouse, scalar x, scalar y, unsigned button) {
-        if (sizing_) {
-            track_mouse_input(this, false);
-            sizing_ = false;
-            size_x_ = 0;
-            size_y_ = 0;
+        if (!mover_.is_moving()) {
+            frame_.on_mouse_up(mouse, x, y, button);
         }
-    }
 
-    virtual void on_mouse_move(bklib::mouse& mouse, scalar dx, scalar dy) {
-        widget_base::on_mouse_move(mouse, dx, dy);
+        if (!frame_.is_sizing()) {
+            mover_.on_mouse_up(mouse, x, y, button);
+        }
     }
 
     virtual void on_mouse_move_to(bklib::mouse& mouse, scalar x, scalar y) {
-        if (!sizing_) {
-            return;
+        if (!mover_.is_moving()) {
+            frame_.on_mouse_move_to(mouse, x, y);
         }
 
-        auto const last = mouse.absolute(1);
-        auto const p    = bklib::make_point2d<scalar, scalar>(last.x, last.y);
-
-        auto const sx = size_x_;
-        auto const sy = size_y_;
-
-        scalar const dx = x - last.x;
-        scalar const dy = y - last.y;
-
-        scalar const w = bounds_.width();
-        scalar const h = bounds_.height();
-
-        scalar const left   = bounds_.left()   + dx*((sx*sx - sx) / 2);
-        scalar const top    = bounds_.top()    + dy*((sy*sy - sy) / 2);
-        scalar const right  = bounds_.right()  + dx*((sx*sx + sx) / 2);
-        scalar const bottom = bounds_.bottom() + dy*((sy*sy + sy) / 2);
-
-        bounds_ = bounding_box{
-            left
-            , top
-            , right  - left < 10 ? left + 10 : right
-            , bottom - top  < 10 ? top  + 10 : bottom
-        };
+        if (!frame_.is_sizing()) {
+            mover_.on_mouse_move_to(mouse, x, y);
+        }
     }
 
     virtual void on_mouse_enter(bklib::mouse& mouse, scalar x, scalar y) {
-        widget_base::on_mouse_enter(mouse, x, y);
-        mouse_in_ = true;
     }
 
     virtual void on_mouse_exit(bklib::mouse& mouse, scalar x, scalar y) {
-        widget_base::on_mouse_exit(mouse, x, y);
-        mouse_in_ = false;
     }
 
-    void set_bounds(bounding_box bounds) {
-        bounds_ = bounds;
+    virtual void resize(bounding_box size) {
+        bounds_ = size;
     }
 
     virtual void draw(renderer& r) const override {
         r.set_color(1.0f, 1.0f, 1.0f);
         r.draw_filled_rect(bounds_);
-        if (mouse_in_) {
-            r.set_color(0.0f, 0.0f, 0.0f);
-            r.draw_rect(bounds_);
-        }
+
+        r.set_color(0.0f, 0.0f, 0.0f);
+        r.draw_rect(bounds_, 8.0f);
     }
 
     virtual bounding_box bounds() const {
@@ -479,11 +548,8 @@ public:
     }
 private:
     bounding_box bounds_;
-    bool mouse_in_ = false;
-
-    bool sizing_ = false;
-    int  size_x_ = 0;
-    int  size_y_ = 0;
+    sizing_frame frame_ {*this};
+    mover        mover_ {*this};
 };
 //==============================================================================
 class icon_grid : public widget_base

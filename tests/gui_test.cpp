@@ -37,7 +37,7 @@ TEST(Gui, Basic) {
 
     for (auto i : indicies) {
         auto ptr = root.add_child(std::make_unique<canvas>(names[i]));
-        ptr->set_bounds(sizes[i]);
+        ptr->resize(sizes[i]);
     }
 
     size_t i = 0;
