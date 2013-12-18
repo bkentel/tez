@@ -7,7 +7,7 @@
 
 #include <bklib/window.hpp>
 
-#include <bklib/impl/win/direct2d.hpp>
+#include <bklib/renderer2d.hpp>
 
 namespace tez {
 namespace gui {
@@ -15,7 +15,9 @@ namespace gui {
 using scalar       = int;
 using point        = bklib::point2d<scalar>;
 using bounding_box = bklib::axis_aligned_rect<scalar>;
-using renderer     = bklib::detail::d2d_renderer;
+using renderer     = bklib::renderer2d;
+using color        = renderer::color;
+using color_alpha  = renderer::color_alpha;
 
 class widget_base;
 class container_widget;
@@ -28,93 +30,98 @@ using on_mouse_exit    = bklib::on_mouse_exit;
 using on_mouse_down    = bklib::on_mouse_down;
 using on_mouse_up      = bklib::on_mouse_up;
 
+template <typename Container, typename Predicate>
+inline auto find_if(Container&& container, Predicate&& predicate) {
+    auto const where = std::find_if(
+        std::begin(container)
+      , std::end(container)
+      , std::forward<Predicate>(predicate)
+    );
+
+    return where;
+}
+
 //==============================================================================
 #define BK_GUI_DECLARE_LISTENER(event)\
 public:\
     virtual void listen(::tez::gui::event callback) override { event##_ = callback; }\
 protected:\
     ::tez::gui::event event##_
+
+//==============================================================================
+void  track_mouse_input(widget_base& widget, bool track = true);
+point local_to_screen(widget_base const& widget, point p);
+
+//==============================================================================
+
+template <typename T>
+inline void unused(T const&) {}
+
+template <typename Head, typename... Tail>
+inline void unused(Head const&, Tail const&... tail) {
+    unused(tail...);
+}
+
 //==============================================================================
 class widget_base {
 public:
     widget_base() = delete;
+    widget_base(widget_base const&) = delete;
+    widget_base& operator=(widget_base const&) = delete;
+
+    widget_base(widget_base&&) = default;
+    widget_base& operator=(widget_base&&) = default;
+
+    widget_base(bounding_box bounds, widget_base* parent, bklib::utf8string name)
+      : bounds_ {bounds}
+      , parent_ {parent}
+      , name_   {std::move(name)}
+      , hash_   {bklib::utf8string_hash(name_)}
+    {
+    }
 
     explicit widget_base(bklib::utf8string name)
-      : parent_{nullptr}
-      , name_{std::move(name)}
-      , hash_{bklib::utf8string_hash(name_)}
+      : widget_base(bounding_box{}, nullptr, std::move(name))
     {
     }
 
     virtual ~widget_base() = default;
 
-    virtual void listen(gui::on_mouse_move_to callback) { BK_UNUSED(callback); BK_DEBUG_BREAK(); }
-    virtual void listen(gui::on_mouse_move    callback) { BK_UNUSED(callback); BK_DEBUG_BREAK(); }
-    virtual void listen(gui::on_mouse_enter   callback) { BK_UNUSED(callback); BK_DEBUG_BREAK(); }
-    virtual void listen(gui::on_mouse_exit    callback) { BK_UNUSED(callback); BK_DEBUG_BREAK(); }
-    virtual void listen(gui::on_mouse_down    callback) { BK_UNUSED(callback); BK_DEBUG_BREAK(); }
-    virtual void listen(gui::on_mouse_up      callback) { BK_UNUSED(callback); BK_DEBUG_BREAK(); }
+    virtual void listen(gui::on_mouse_move_to callback) { unused(callback); }
+    virtual void listen(gui::on_mouse_move    callback) { unused(callback); }
+    virtual void listen(gui::on_mouse_enter   callback) { unused(callback); }
+    virtual void listen(gui::on_mouse_exit    callback) { unused(callback); }
+    virtual void listen(gui::on_mouse_down    callback) { unused(callback); }
+    virtual void listen(gui::on_mouse_up      callback) { unused(callback); }
 
-    virtual void on_mouse_move(bklib::mouse& mouse, scalar dx, scalar dy) {
-        BK_UNUSED(mouse); BK_UNUSED(dx); BK_UNUSED(dy);
-    }
+    virtual void on_mouse_move    (bklib::mouse& mouse, scalar dx, scalar dy) { unused(mouse, dx, dy); }
+    virtual void on_mouse_move_to (bklib::mouse& mouse, scalar x,  scalar y)  { unused(mouse, x, y); }
+    virtual void on_mouse_enter   (bklib::mouse& mouse, scalar x,  scalar y)  { unused(mouse, x, y); }
+    virtual void on_mouse_exit    (bklib::mouse& mouse, scalar x,  scalar y)  { unused(mouse, x, y); }
+    virtual void on_mouse_down    (bklib::mouse& mouse, scalar x,  scalar y, unsigned button) { unused(mouse, x, y, button); }
+    virtual void on_mouse_up      (bklib::mouse& mouse, scalar x,  scalar y, unsigned button) { unused(mouse, x, y, button); }
 
-    virtual void on_mouse_move_to(bklib::mouse& mouse, scalar x, scalar y) {
-        BK_UNUSED(mouse); BK_UNUSED(x); BK_UNUSED(y);
-    }
-
-    virtual void on_mouse_enter(bklib::mouse& mouse, scalar x, scalar y) {
-        BK_UNUSED(mouse); BK_UNUSED(x); BK_UNUSED(y);
-    }
-
-    virtual void on_mouse_exit(bklib::mouse& mouse, scalar x, scalar y) {
-        BK_UNUSED(mouse); BK_UNUSED(x); BK_UNUSED(y);
-    }
-
-    virtual void on_mouse_down(bklib::mouse& mouse, scalar x, scalar y, unsigned button) {
-        BK_UNUSED(mouse); BK_UNUSED(x); BK_UNUSED(y); BK_UNUSED(button);
-    }
-
-    virtual void on_mouse_up(bklib::mouse& mouse, scalar x, scalar y, unsigned button) {
-        BK_UNUSED(mouse); BK_UNUSED(x); BK_UNUSED(y); BK_UNUSED(button);
-    }
-
-    virtual void draw(renderer& r) const = 0;
+    virtual void draw(renderer& r) const { unused(r); };
 
     virtual widget_base*      parent() const BK_NOEXCEPT { return parent_; }
     virtual bklib::string_ref name()   const BK_NOEXCEPT { return name_; }
     virtual bklib::hash_t     hash()   const BK_NOEXCEPT { return hash_; }
+    virtual bounding_box      bounds() const BK_NOEXCEPT { return bounds_;}
 
     virtual widget_base* set_parent(widget_base* parent) BK_NOEXCEPT {
         using std::swap;
         swap(parent, parent_);
-
         return parent;
     }
 
-    virtual bounding_box bounds() const {
-        return bounding_box {};
-    }
-
-    virtual void resize(bounding_box size) {}
+    virtual void resize(bounding_box size) BK_NOEXCEPT { bounds_ = size; }
 protected:
+    bounding_box      bounds_;
     widget_base*      parent_;
     bklib::utf8string name_;
     bklib::hash_t     hash_;
 };
 
-//==============================================================================
-inline point local_to_screen(widget_base const& widget, point const p) {
-    point result = p;
-
-    for (auto w = &widget; w != nullptr; w = w->parent()) {
-        auto top_left = w->bounds().top_left();
-        result.x += top_left.x;
-        result.y += top_left.y;
-    }
-
-    return result;
-}
 //==============================================================================
 class container_widget : public widget_base {
 public:
@@ -122,20 +129,21 @@ public:
     using container_t = std::vector<element_t>;
     using iterator    = std::vector<element_t>::iterator;
 
-    auto begin()        { return children_.begin(); }
-    auto end()          { return children_.end(); }
-    auto begin()  const { return children_.begin(); }
-    auto end()    const { return children_.end(); }
-    auto cbegin() const { return children_.cbegin(); }
-    auto cend()   const { return children_.cend(); }
+    auto begin()         { return children_.begin(); }
+    auto end()           { return children_.end(); }
+    auto begin()   const { return children_.begin(); }
+    auto end()     const { return children_.end(); }
+    auto cbegin()  const { return children_.cbegin(); }
+    auto cend()    const { return children_.cend(); }
+
+    auto rbegin()        { return children_.begin(); }
+    auto rend()          { return children_.end(); }
+    auto rbegin()  const { return children_.begin(); }
+    auto rend()    const { return children_.end(); }
+    auto crbegin() const { return children_.crbegin(); }
+    auto crend()   const { return children_.crend(); }
 
     using widget_base::widget_base;
-
-    virtual void draw(renderer& r) const override {
-        std::for_each(std::crbegin(children_), std::crend(children_), [&](element_t const& child) {
-            child->draw(r);
-        });
-    }
 
     template <typename T>
     T* add_child(std::unique_ptr<T> child) {
@@ -159,9 +167,13 @@ public:
     element_t remove_child(bklib::hash_t const hash) {
         element_t result;
 
-        auto where = std::find_if(std::begin(children_), std::end(children_), [hash](element_t const& child) {
+        auto const where = gui::find_if(children_, [hash](element_t const& child) {
             return child->hash() == hash;
         });
+
+        //auto where = std::find_if(std::begin(children_), std::end(children_), [hash](element_t const& child) {
+        //    return child->hash() == hash;
+        //});
 
         if (where == std::end(children_)) {
             return result;
@@ -170,57 +182,6 @@ public:
         result = std::move(*where);
         children_.erase(where);
         return result;
-    }
-
-    virtual void on_mouse_move(bklib::mouse& mouse, scalar dx, scalar dy) {
-        auto const pos = mouse.absolute();
-        point const p {pos.x, pos.y};
-
-        for (auto& child : children_) {
-            if (bklib::intersects(child->bounds(), p)) {
-                child->on_mouse_move(mouse, dx, dy);
-                break;
-            }
-        }
-    }
-
-    virtual void on_mouse_move_to(bklib::mouse& mouse, scalar x, scalar y) {
-        auto old = mouse.absolute(1);
-
-        auto const cur_target = find_topmost_at(x, y);
-        auto const old_target = find_topmost_at(old.x, old.y);
-
-        if (cur_target && cur_target == old_target) {
-            cur_target->on_mouse_move_to(mouse, x, y);
-        } else {
-            if (old_target && old_target != cur_target) {
-                old_target->on_mouse_exit(mouse, x, y);
-            }
-
-            if (cur_target && cur_target != old_target) {
-                cur_target->on_mouse_enter(mouse, x, y);
-            }
-        }
-    }
-
-    virtual void on_mouse_enter(bklib::mouse& mouse, scalar x, scalar y) {
-        on_mouse_move_to(mouse, x, y);
-    }
-
-    virtual void on_mouse_exit(bklib::mouse& mouse, scalar x, scalar y) {
-        on_mouse_move_to(mouse, x, y);
-    }
-
-    virtual void on_mouse_down(bklib::mouse& mouse, scalar x, scalar y, unsigned button) {
-        if (auto const target = find_topmost_at(x, y)) {
-            target->on_mouse_down(mouse, x, y, button);
-        }       
-    }
-
-    virtual void on_mouse_up(bklib::mouse& mouse, scalar x, scalar y, unsigned button) {
-        if (auto const target = find_topmost_at(x, y)) {
-            target->on_mouse_up(mouse, x, y, button);
-        }
     }
 
     widget_base* find_topmost_at(scalar x, scalar y) const {
@@ -241,6 +202,63 @@ public:
             element_t& b = *where--;
 
             swap(a, b);
+        }
+    }
+
+    virtual void draw(renderer& r) const override {
+        std::for_each(std::crbegin(children_), std::crend(children_), [&](element_t const& child) {
+            child->draw(r);
+        });
+    }
+
+    virtual void on_mouse_move(bklib::mouse& mouse, scalar dx, scalar dy) override {
+        auto const pos = mouse.absolute();
+        point const p {pos.x, pos.y};
+
+        for (auto& child : children_) {
+            if (bklib::intersects(child->bounds(), p)) {
+                child->on_mouse_move(mouse, dx, dy);
+                break;
+            }
+        }
+    }
+
+    virtual void on_mouse_move_to(bklib::mouse& mouse, scalar x, scalar y) override {
+        auto old = mouse.absolute(1);
+
+        auto const cur_target = find_topmost_at(x, y);
+        auto const old_target = find_topmost_at(old.x, old.y);
+
+        if (cur_target && cur_target == old_target) {
+            cur_target->on_mouse_move_to(mouse, x, y);
+        } else {
+            if (old_target && old_target != cur_target) {
+                old_target->on_mouse_exit(mouse, x, y);
+            }
+
+            if (cur_target && cur_target != old_target) {
+                cur_target->on_mouse_enter(mouse, x, y);
+            }
+        }
+    }
+
+    virtual void on_mouse_enter(bklib::mouse& mouse, scalar x, scalar y) override {
+        on_mouse_move_to(mouse, x, y);
+    }
+
+    virtual void on_mouse_exit(bklib::mouse& mouse, scalar x, scalar y) override {
+        on_mouse_move_to(mouse, x, y);
+    }
+
+    virtual void on_mouse_down(bklib::mouse& mouse, scalar x, scalar y, unsigned button) override {
+        if (auto const target = find_topmost_at(x, y)) {
+            target->on_mouse_down(mouse, x, y, button);
+        }       
+    }
+
+    virtual void on_mouse_up(bklib::mouse& mouse, scalar x, scalar y, unsigned button) override {
+        if (auto const target = find_topmost_at(x, y)) {
+            target->on_mouse_up(mouse, x, y, button);
         }
     }
 private:
@@ -283,31 +301,18 @@ public:
         }
     }
 
-    void track_mouse_input(widget_base* const widget, bool const track = true) {
+    void track_mouse_input(widget_base& widget, bool const track = true) {
         if (!track) {
-            BK_ASSERT(widget == track_mouse_input_);
+            BK_ASSERT(&widget == track_mouse_input_);
             track_mouse_input_ = nullptr;
         } else {
             BK_ASSERT(track_mouse_input_ == nullptr);
-            track_mouse_input_ = widget;
+            track_mouse_input_ = &widget;
         }
     }
 private:
     widget_base* track_mouse_input_ = nullptr;
 };
-
-inline void track_mouse_input(widget_base* const widget, bool track = true) {
-    auto root = widget;
-
-    while (root->parent()) {
-        root = root->parent();
-    }
-
-    BK_ASSERT(dynamic_cast<gui::root*>(root) != nullptr);
-    auto as_root = static_cast<gui::root*>(root);
-
-    as_root->track_mouse_input(widget, track);
-}
 
 //==============================================================================
 class sizing_frame {
@@ -372,16 +377,16 @@ public:
         state_ = static_cast<state>(value);
 
         if (state_ != state::none) {
-            track_mouse_input(&widget_, true);
+            gui::track_mouse_input(widget_, true);
         }
     }
 
-    void on_mouse_up(mouse& m, scalar x, scalar y, unsigned button) {
+    void on_mouse_up(mouse&, scalar, scalar, unsigned button) {
         if (button != 0) return;
         if (state_ == state::none) return;
 
         state_ = state::none;
-        track_mouse_input(&widget_, false);
+        gui::track_mouse_input(widget_, false);
     }
 
     void on_mouse_move_to(mouse& m, scalar x, scalar y) {
@@ -454,20 +459,20 @@ public:
         return moving_;
     }
 
-    void on_mouse_down(mouse& m, scalar x, scalar y, unsigned button) {
+    void on_mouse_down(mouse&, scalar, scalar, unsigned button) {
         if (button != 0) return;
         BK_ASSERT(!moving_);
 
         moving_ = true;
-        track_mouse_input(&widget_, true);
+        gui::track_mouse_input(widget_, true);
     }
 
-    void on_mouse_up(mouse& m, scalar x, scalar y, unsigned button) {
+    void on_mouse_up(mouse&, scalar, scalar, unsigned button) {
         if (button != 0) return;
         if (moving_ == false) return;
 
         moving_ = false;
-        track_mouse_input(&widget_, false);
+        gui::track_mouse_input(widget_, false);
     }
 
     void on_mouse_move_to(mouse& m, scalar x, scalar y) {
@@ -531,23 +536,15 @@ public:
     virtual void on_mouse_exit(bklib::mouse& mouse, scalar x, scalar y) {
     }
 
-    virtual void resize(bounding_box size) {
-        bounds_ = size;
-    }
-
     virtual void draw(renderer& r) const override {
-        r.set_color(1.0f, 1.0f, 1.0f);
-        r.draw_filled_rect(bounds_);
+        r.set_color_brush(bklib::gfx::color3f {{1.0f, 1.0f, 1.0f}});
+        r.fill_rect(bounds_);
 
-        r.set_color(0.0f, 0.0f, 0.0f);
+        r.set_color_brush(bklib::gfx::color3f {{0.0f, 0.0f, 0.0f}});
         r.draw_rect(bounds_, 8.0f);
     }
 
-    virtual bounding_box bounds() const {
-        return bounds_;
-    }
 private:
-    bounding_box bounds_;
     sizing_frame frame_ {*this};
     mover        mover_ {*this};
 };
@@ -573,8 +570,7 @@ public:
     }
 
     icon_grid(bklib::utf8string name, bounding_box bounds, size_t count)
-      : widget_base{std::move(name)}
-      , bounds_{check_bounds_(bounds)}
+      : widget_base{bounds, nullptr, std::move(name)}
       , count_ {check_count_(count)}
       , items_ (count)
     {
@@ -665,7 +661,12 @@ public:
           , cell_back.bottom() - bs
         };
 
-        r.set_color(0.0f, 0.0f, 0.0f);
+        color const border_color         {0.0f, 0.0f, 0.0f};
+        color const cell_backcolor       {0.0f, 0.0f, 0.0f};
+        color const cell_forecolor       {0.5f, 0.5f, 0.5f};
+        color const cell_highlight_color {0.0f, 1.0f, 0.0f};
+
+        r.set_color_brush(border_color);
         r.draw_rect(bounds());
 
         for (size_t i = 0; i < count_; ++i) {
@@ -673,21 +674,18 @@ public:
             scalar const xi = i % cols;
             auto const    v = bklib::make_vector2d(xi*gs, yi*gs);
 
-            r.set_color(0.0f, 0.0f, 0.0f);
-            r.draw_filled_rect(cell_back + v);
+            r.set_color_brush(cell_backcolor);
+            r.fill_rect(cell_back + v);
 
             if (mouse_in_ && i == index_) {
-                r.set_color(0.0f, 1.0f, 0.0f);
+                r.set_color_brush(cell_highlight_color);
             } else {
-                r.set_color(0.5f, 0.5f, 0.5f);
+                r.set_color_brush(cell_forecolor);
             }
-            r.draw_filled_rect(cell_front + v);
+            r.fill_rect(cell_front + v);
         }
     }
 
-    virtual bounding_box bounds() const {
-        return bounds_;
-    }
 private:
     void calculate_rows_cols_() {
         auto const width = bounds_.width();
@@ -698,7 +696,6 @@ private:
         row_count_ = rows;
     }
 
-    bounding_box bounds_;
     size_t count_;
     std::vector<std::unique_ptr<grid_item>> items_;
 

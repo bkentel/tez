@@ -98,6 +98,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="impl\commands.cpp" />
+    <ClCompile Include="impl\gui.cpp" />
     <ClCompile Include="impl\hotkeys.cpp" />
     <ClCompile Include="impl\languages.cpp" />
     <ClCompile Include="impl\pch.cpp">

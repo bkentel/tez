@@ -46,8 +46,8 @@ TEST(Gui, Basic) {
     }
 
 
-    bklib::platform_window window(L"test");
-    bklib::detail::d2d_renderer renderer(window.get_handle());
+    bklib::platform_window window   {L"test"};
+    bklib::renderer2d      renderer {window.get_handle()};
 
     auto const on_mouse_move_to = [&](bklib::mouse& mouse, int x, int y) {
         root.on_mouse_move_to(mouse, x, y);
