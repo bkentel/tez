@@ -8,19 +8,7 @@ using tez::command_type;
 using tez::hotkeys;
 
 namespace json = bklib::json;
-
-BK_DEFINE_EXCEPTION_INFO(info_rule_trace, std::vector<bklib::string_ref>);
-namespace {
-void add_rule_exception_info(json::error::base& e, bklib::string_ref rule) {
-    auto const ptr = boost::get_error_info<info_rule_trace>(e);
-
-    if (ptr) {
-        ptr->push_back(rule);
-    } else {
-        e << info_rule_trace{{rule}};
-    }
-}
-} //namespace
+namespace error = json::error;
 
 ////////////////////////////////////////////////////////////////////////////////
 utf8string const tez::hotkeys::DEFAULT_FILE_NAME = {"./data/bindings.def"};
@@ -41,7 +29,6 @@ flat_map<hash_t,    command_type> hash_to_command;
 
 void init() {
     if (initialized) return;
-
     initialized = true;
 
     hotkeys::reload();
@@ -125,8 +112,7 @@ void tez::bindings_parser::rule_root(cref json_root) {
 
         rule_binding_list(json_binding_list);
     } catch (json::error::base& e) {
-        add_rule_exception_info(e, "ROOT");
-        throw;
+        BK_JSON_ADD_TRACE(e);
     }
 }
 //------------------------------------------------------------------------------
@@ -138,8 +124,7 @@ void tez::bindings_parser::rule_binding_list(cref json_binding_list) {
             rule_binding(json_binding);
         });
     } catch (json::error::base& e) {
-        add_rule_exception_info(e, "BINDING_LIST");
-        throw;
+        BK_JSON_ADD_TRACE(e);
     }
 }
 //------------------------------------------------------------------------------
@@ -159,25 +144,24 @@ void tez::bindings_parser::rule_binding(cref json_binding) {
 
         cur_command_ = rule_command(json_command);
         if (cur_command_ == command_type::NONE) {
+            BK_DEBUG_BREAK();
             return; //TODO
         }
 
         rule_combo_list(json_combo_list);
     } catch (json::error::base& e) {
-        add_rule_exception_info(e, "BINDING");
-        throw;
+        BK_JSON_ADD_TRACE(e);
     }
 }
 //------------------------------------------------------------------------------
 tez::command_type tez::bindings_parser::rule_command(cref json_command) {
     try {
         auto const command_string = json::require_string(json_command);
-        auto const command = hotkeys::translate(command_string);
+        auto const command = to_command(command_string);;
 
         return command;
     } catch (json::error::base& e) {
-        add_rule_exception_info(e, "COMMAND");
-        throw;
+        BK_JSON_ADD_TRACE(e);
     }
 }
 //------------------------------------------------------------------------------
@@ -201,8 +185,7 @@ void tez::bindings_parser::rule_combo_list(cref json_combo_list) {
             }
         });
     } catch (json::error::base& e) {
-        add_rule_exception_info(e, "COMBO_LIST");
-        throw;
+        BK_JSON_ADD_TRACE(e);
     }
 }
 //------------------------------------------------------------------------------
@@ -226,8 +209,7 @@ bklib::key_combo tez::bindings_parser::rule_combo(cref json_combo) {
 
         return result;
     } catch (json::error::base& e) {
-        add_rule_exception_info(e, "COMBO");
-        throw;
+        BK_JSON_ADD_TRACE(e);
     }
 }
 //------------------------------------------------------------------------------
@@ -238,8 +220,7 @@ bklib::keycode tez::bindings_parser::rule_key(cref json_key) {
 
         return key;
     } catch (json::error::base& e) {
-        add_rule_exception_info(e, "KEY");
-        throw;
+        BK_JSON_ADD_TRACE(e);
     }
 }
 //------------------------------------------------------------------------------

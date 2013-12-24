@@ -82,6 +82,11 @@
   <ItemGroup>
     <ProjectReference Include="..\bklib\bklib.vcxproj">
       <Project>{b5bbb55e-5f20-4361-8d25-2bea68ca2672}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -90,7 +95,9 @@
     <ClInclude Include="grid2d.hpp" />
     <ClInclude Include="gui.hpp" />
     <ClInclude Include="hotkeys.hpp" />
+    <ClInclude Include="types.hpp" />
     <ClInclude Include="languages.hpp" />
+    <ClInclude Include="loot_table.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="room.hpp" />
     <ClInclude Include="tile_data.hpp" />
@@ -101,6 +108,7 @@
     <ClCompile Include="impl\gui.cpp" />
     <ClCompile Include="impl\hotkeys.cpp" />
     <ClCompile Include="impl\languages.cpp" />
+    <ClCompile Include="impl\loot_table.cpp" />
     <ClCompile Include="impl\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

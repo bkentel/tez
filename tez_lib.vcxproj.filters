@@ -45,6 +45,12 @@
     <ClInclude Include="gui.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="loot_table.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="types.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="impl\pch.cpp">
@@ -66,6 +72,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="impl\gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\loot_table.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

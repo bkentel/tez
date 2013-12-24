@@ -69,7 +69,7 @@
     #include <boost/exception/all.hpp>
     #include <boost/container/flat_map.hpp>
     #include <boost/container/flat_set.hpp>
-    #include <boost/log/trivial.hpp>
+    //#include <boost/log/trivial.hpp>
     #include <boost/variant.hpp>
     #include <boost/utility/string_ref.hpp>
 

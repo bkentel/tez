@@ -2,6 +2,14 @@
 #include <bklib/math.hpp>
 #include <bklib/renderer2d.hpp>
 
+#include <glm/glm.hpp>
+
+#include "room.hpp"
+#include "algorithms.hpp"
+#include "hotkeys.hpp"
+
+////
+
 class game_main {
 public:
     game_main()
@@ -9,7 +17,7 @@ public:
       , renderer2d_ {window_.get_handle()}
     {
         using namespace std::placeholders;
-        using std::bind; 
+        using std::bind;
 
         window_.listen(bklib::on_resize{
             bind(&game_main::on_resize, this, _1, _2)
@@ -40,11 +48,42 @@ public:
         window_.listen(bklib::on_keyrepeat{
             bind(&game_main::on_keyrepeat, this, _1, _2)
         });
+
+        tez::generator::layout_random layout { };
+        tez::generator::room_simple   simple {tez::generator::room_simple::range{{3, 10}}, tez::generator::room_simple::range{{3, 10}}};
+
+        tez::random rand {10};
+
+        for (size_t i = 0; i < 20; ++i) {
+            auto room = simple.generate(rand);
+            layout.insert(rand, std::move(room));
+        }
+
+        layout.normalize();
+
+        map_ = layout.to_grid();
     }
 
     void render() {
         renderer2d_.begin();
         renderer2d_.clear();
+
+        for (auto const& cell : map_) {
+            if (cell.value.type == tez::tile_type::empty) continue;
+
+            auto const ix = cell.i.x;
+            auto const iy = cell.i.y;
+
+            bklib::renderer2d::rect const r = {
+                ix * 32.0f
+              , iy * 32.0f
+              , ix * 32.0f + 32.0f
+              , iy * 32.0f + 32.0f
+            };
+
+            renderer2d_.fill_rect(r);
+        }
+
         renderer2d_.end();
     }
 
@@ -71,6 +110,14 @@ public:
     }
 
     void on_keydown(bklib::keyboard& keyboard, bklib::keycode key) {
+        auto const combo   = keyboard.state();
+        auto const command = keymap_.translate(combo);
+
+        switch (command) {
+        case tez::command_type::DIR_NORTH :
+            std::cout << "north" << std::endl;
+            break;
+        }
     }
     void on_keyup(bklib::keyboard& keyboard, bklib::keycode key) {
     }
@@ -80,6 +127,9 @@ public:
 private:
     bklib::platform_window window_;
     bklib::renderer2d      renderer2d_;
+    tez::grid2d<tez::tile_data> map_;
+
+    tez::hotkeys keymap_;
 };
 
 int main(int argc, char const* argv[]) try {

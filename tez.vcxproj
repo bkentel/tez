@@ -84,6 +84,11 @@
   <ItemGroup>
     <ProjectReference Include="tez_lib.vcxproj">
       <Project>{d4a9968e-6c6c-463e-bed5-483abf50faf8}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -278,6 +278,8 @@ public:
     {
     }
 
+    grid2d() : grid2d(0, 0) {}
+
     size_t width()    const BK_NOEXCEPT { return width_; }
     size_t height()   const BK_NOEXCEPT { return height_; }
     size_t size()     const BK_NOEXCEPT { return width() * height(); }

@@ -1,0 +1,30 @@
+{ "tables": [
+    {
+        "id": "common_food"
+      , "table": [
+            [10, "item", "cheese", ["uniform", 1, 3]]
+          , [20, "item", "apple",  ["fixed",  1]]
+          , [30, "item", "meat",   ["normal", 1, 1]]
+          , [5,  "item", "candy",  ["uniform", 1, 3]]
+        ]
+    }
+  , {
+        "id": "common_weapon"
+      , "table": [
+            [4,  "item", "axe"]
+          , [4,  "item", "sword"]
+          , [4,  "item", "dagger"]
+          , [4,  "item", "hammer"]
+          , [2,  "item", "bow"]
+          , [1,  "item", "staff"]
+          , [1,  "item", "wand"]
+        ]
+    }
+  , {
+        "id": "common"
+      , "table": [
+            [10, "table", "common_weapon"]
+          , [10, "table", "common_food"]
+        ]
+    }
+]}

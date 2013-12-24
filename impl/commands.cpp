@@ -33,7 +33,7 @@ namespace local_state {
     }
     //--------------------------------------------------------------------------
     static void do_init() {
-        BOOST_LOG_TRIVIAL(trace) << "initializing command strings.";
+        //BOOST_LOG_TRIVIAL(trace) << "initializing command strings.";
 
         BK_ASSERT(hash_to_command_map.empty());
 
