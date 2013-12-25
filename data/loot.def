@@ -1,30 +1,29 @@
 { "tables": [
-    {
-        "id": "common_food"
-      , "table": [
-            [10, "item", "cheese", ["uniform", 1, 3]]
-          , [20, "item", "apple",  ["fixed",  1]]
-          , [30, "item", "meat",   ["normal", 1, 1]]
-          , [5,  "item", "candy",  ["uniform", 1, 3]]
-        ]
-    }
-  , {
-        "id": "common_weapon"
-      , "table": [
-            [4,  "item", "axe"]
-          , [4,  "item", "sword"]
-          , [4,  "item", "dagger"]
-          , [4,  "item", "hammer"]
-          , [2,  "item", "bow"]
-          , [1,  "item", "staff"]
-          , [1,  "item", "wand"]
-        ]
-    }
-  , {
-        "id": "common"
-      , "table": [
-            [10, "table", "common_weapon"]
-          , [10, "table", "common_food"]
-        ]
-    }
+
+{   "id": "common_food"
+  , "table": [
+        [10, "item", "cheese", ["uniform", 1, 3]]
+      , [20, "item", "apple",  ["fixed",  1]]
+      , [30, "item", "meat",   ["normal", 1, 1]]
+      , [5,  "item", "candy",  ["uniform", 1, 3]]
+    ]
+},
+{   "id": "common_weapon"
+  , "table": [
+        [4,  "item", "hand_axe"]
+      , [4,  "item", "short_sword"]
+      , [4,  "item", "dagger"]
+      , [4,  "item", "hammer"]
+      , [2,  "item", "crude_bow"]
+      , [1,  "item", "short_staff"]
+      , [1,  "item", "simple_wand"]
+    ]
+},
+{   "id": "common"
+  , "table": [
+        [1, "table", "common_weapon"]
+      , [1, "table", "common_food"]
+    ]
+}
+
 ]}

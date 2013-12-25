@@ -7,23 +7,75 @@
 using tez::loot_table;
 using tez::loot_table_parser;
 using tez::distribution;
-using tez::table_ref;
+using tez::loot_table_ref;
 using tez::item_ref;
 using tez::random_t;
 
 using bklib::utf8string;
+using bklib::string_ref;
 
 ////////////////////////////////////////////////////////////////////////////////
 // File local state.
 ////////////////////////////////////////////////////////////////////////////////
 namespace {
+
+    template <size_t N>
+    bklib::string_ref make_string_ref(char const (&str)[N]) {
+        return bklib::string_ref{str, N - 1};
+    }
+
 namespace local_state {
 
 template <typename Key, typename Value>
 using map_t = boost::container::flat_map<Key, Value>;
 
-map_t<table_ref, loot_table> loot_tables;
+map_t<loot_table_ref, loot_table> loot_tables;
 map_t<item_ref,  utf8string> loot_items;
+
+loot_table* get_table(loot_table_ref table) {
+    auto const where = loot_tables.find(table);
+
+    return (where != std::cend(loot_tables))
+      ? &where->second
+      : nullptr
+    ;
+}
+
+bool add_table(loot_table&& table) {
+    auto const ref   = table.reference();
+    auto const where = loot_tables.lower_bound(ref);
+
+    if (where != std::cend(loot_tables) && where->first == ref) {
+        return false;
+    }
+
+    loot_tables.emplace_hint(where, ref, std::move(table));
+    return true;
+}
+
+void add_loot() {
+    string_ref const items[] = {
+          make_string_ref("cheese")
+        , make_string_ref("apple")
+        , make_string_ref("meat")
+        , make_string_ref("candy")
+        , make_string_ref("axe")
+        , make_string_ref("sword")
+        , make_string_ref("dagger")
+        , make_string_ref("hammer")
+        , make_string_ref("bow")
+        , make_string_ref("staff")
+        , make_string_ref("wand")
+    };
+
+    for (auto const item : items) {
+        item_ref const ref {bklib::utf8string_hash(item.data())};
+        auto const result = loot_items.emplace(ref, item);
+        if (!result.second) {
+            BK_DEBUG_BREAK(); //TODO
+        }
+    }
+}
 
 } //namespace local_state
 } //namespace
@@ -49,7 +101,7 @@ loot_table::loot_table(utf8string id, table_entries&& entries, weights_t const& 
 
 loot_table::item_list loot_table::roll(random_t& random) {
     std::vector<item_ref>  items;
-    boost::container::flat_set<table_ref> history;
+    boost::container::flat_set<loot_table_ref> history;
 
     roll(random, items, history);
 
@@ -73,7 +125,7 @@ void loot_table::roll(random_t& random, item_list& items, history_t& history) {
         return;
     }
 
-    auto const value = *boost::get<table_ref>(&entry.value);
+    auto const value = *boost::get<loot_table_ref>(&entry.value);
     auto const table = to_loot_table(value);
     if (table == nullptr) {
         BK_DEBUG_BREAK();
@@ -91,9 +143,24 @@ void loot_table::roll(random_t& random, item_list& items, history_t& history) {
     }
 }
 
-loot_table* tez::to_loot_table(table_ref  ref) { return nullptr; }
+loot_table* tez::to_loot_table(loot_table_ref ref) {
+    return local_state::get_table(ref);
+}
+
 loot_table* tez::to_loot_table(utf8string id) { return nullptr; }
-loot_table* tez::to_loot_table(string_ref id) { return nullptr; }
+
+loot_table* tez::to_loot_table(string_ref id) {
+    loot_table_ref const ref {bklib::utf8string_hash(id.data())};
+    return to_loot_table(ref);
+}
+
+string_ref tez::to_item(item_ref item) {
+    static string_ref const none {"{invalid}"};
+
+    auto const where = local_state::loot_items.find(item);
+
+    return where == std::cend(local_state::loot_items) ? none : where->second;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // tez::loot_table_parser
@@ -101,22 +168,54 @@ loot_table* tez::to_loot_table(string_ref id) { return nullptr; }
 
 namespace json = bklib::json;
 
-    //try {
-    //} catch (json::error::base& e) {
-    //    BK_JSON_ADD_TRACE(e);
-    //}
+namespace {
+    auto   const LOOT_ROOT_KEY  = make_string_ref("tables");
+    size_t const LOOT_ROOT_SIZE = 1;
+
+    size_t const LOOT_TABLE_SIZE = 2;
+    auto   const LOOT_TABLE_ID   = make_string_ref("id");
+    auto   const LOOT_TABLE_DEF  = make_string_ref("table");
+
+    size_t const LOOT_ENTRY_MIN_SIZE     = 3;
+    size_t const LOOT_ENTRY_MAX_SIZE     = 4;
+    auto   const LOOT_ENTRY_TYPE_ITEM    = make_string_ref("item");
+    auto   const LOOT_ENTRY_TYPE_TABLE   = make_string_ref("table");
+    size_t const LOOT_ENTRY_WEIGHT_INDEX = 0;
+    size_t const LOOT_ENTRY_TYPE_INDEX   = 1;
+    size_t const LOOT_ENTRY_ID_INDEX     = 2;
+    size_t const LOOT_ENTRY_DIST_INDEX   = 3;
+
+    size_t const LOOT_DIST_TYPE_INDEX          = 0;
+    auto   const LOOT_DIST_UNIFORM             = make_string_ref("uniform");
+    size_t const LOOT_DIST_UNIFORM_PARAMS      = 3;
+    size_t const LOOT_DIST_UNIFORM_MIN_INDEX   = 1;
+    size_t const LOOT_DIST_UNIFORM_MAX_INDEX   = 2;
+    auto   const LOOT_DIST_NORMAL              = make_string_ref("normal");
+    size_t const LOOT_DIST_NORMAL_PARAMS       = 3;
+    size_t const LOOT_DIST_NORMAL_MEAN_INDEX   = 1;
+    size_t const LOOT_DIST_NORMAL_STDDEV_INDEX = 2;
+    auto   const LOOT_DIST_FIXED               = make_string_ref("fixed");
+    size_t const LOOT_DIST_FIXED_PARAMS        = 2;
+    size_t const LOOT_DIST_FIXED_VALUE_INDEX   = 1;
+}
 
 void loot_table_parser::rule_root(cref json_value) {
+    local_state::add_loot(); //TODO delete me
+
     try {
         json::require_object(json_value);
-        if (json_value.size() > 1) {
+        if (json_value.size() != LOOT_ROOT_SIZE) {
             BK_DEBUG_BREAK(); //TODO
         }
 
-        auto table_list = json::require_key(json_value, "tables");
+        auto table_list = json::require_key(json_value, LOOT_ROOT_KEY);
         rule_table_list(table_list);
     } catch (json::error::base& e) {
         BK_JSON_ADD_TRACE(e);
+    }
+
+    for (auto& table : tables_) {
+        local_state::add_table(std::move(table));
     }
 }
 
@@ -135,6 +234,9 @@ void loot_table_parser::rule_table_list(cref json_value) {
 void loot_table_parser::rule_table(cref json_value) {
     try {
         json::require_object(json_value);
+        if (json_value.size() != LOOT_TABLE_SIZE) {
+            BK_DEBUG_BREAK(); //TODO
+        }
 
         rule_table_id(json_value);
         rule_table_def(json_value);
@@ -145,7 +247,7 @@ void loot_table_parser::rule_table(cref json_value) {
 
 void loot_table_parser::rule_table_id(cref json_value) {
     try {
-        auto table_id = json::require_key(json_value, "id");
+        auto table_id = json::require_key(json_value, LOOT_TABLE_ID);
         table_id_ = json::require_string(table_id);
     } catch (json::error::base& e) {
         BK_JSON_ADD_TRACE(e);
@@ -154,11 +256,11 @@ void loot_table_parser::rule_table_id(cref json_value) {
 
 void loot_table_parser::rule_table_def(cref json_value) {
     try {
-        auto table_def = json::require_key(json_value, "table");
+        auto table_def = json::require_key(json_value, LOOT_TABLE_DEF);
         json::require_array(table_def);
 
-        std::vector<double> weights;
-        std::vector<loot_table::entry> entries;
+        loot_table::weights_t     weights;
+        loot_table::table_entries entries;      
 
         json::for_each_element_skip_on_fail(table_def, [&](cref entry) {
             rule_table_entry(entry);
@@ -176,24 +278,26 @@ void loot_table_parser::rule_table_def(cref json_value) {
 void loot_table_parser::rule_table_entry(cref json_value) {
     try {
         json::require_array(json_value);
-        if (json_value.size() > 4) {
+        if (json_value.size() < LOOT_ENTRY_MIN_SIZE) {
+            BK_DEBUG_BREAK(); //TODO
+        } else if (json_value.size() > LOOT_ENTRY_MAX_SIZE) {
             BK_DEBUG_BREAK(); //TODO
         }
 
-        auto entry_weight = json::require_key(json_value, 0);
-        auto entry_type   = json::require_key(json_value, 1);
-        auto entry_id     = json::require_key(json_value, 2);
-        auto entry_dist   = json::optional_key(json_value, 3);
+        auto entry_weight = json::require_key(json_value, LOOT_ENTRY_WEIGHT_INDEX);
+        auto entry_type   = json::require_key(json_value, LOOT_ENTRY_TYPE_INDEX);
+        auto entry_id     = json::require_key(json_value, LOOT_ENTRY_ID_INDEX);
+        auto entry_dist   = json::optional_key(json_value, LOOT_ENTRY_DIST_INDEX);
 
         rule_entry_weight(entry_weight);
         rule_entry_type(entry_type);
         rule_entry_id(entry_id);
         rule_entry_dist(entry_dist);
 
-        if (entry_type_ == "item") {
+        if (entry_type_ == LOOT_ENTRY_TYPE_ITEM) {
             entry_value_ = item_ref{bklib::utf8string_hash(entry_id_)};
-        } else if (entry_type_ == "table") {
-            entry_value_ = table_ref{bklib::utf8string_hash(entry_id_)};
+        } else if (entry_type_ == LOOT_ENTRY_TYPE_TABLE) {
+            entry_value_ = loot_table_ref{bklib::utf8string_hash(entry_id_)};
         } else {
             BK_DEBUG_BREAK(); //TODO
         }
@@ -234,16 +338,14 @@ void loot_table_parser::rule_entry_dist(cref json_value) {
         }
         
         json::require_array(json_value);
-        auto dist_name = json::require_key(json_value, 0);
-        auto name = json::require_string(dist_name);
+        auto dist_type  = json::require_key(json_value, LOOT_DIST_TYPE_INDEX);
+        auto const type = json::require_string(dist_type);
 
-        auto const result =
-            rule_dist_uniform(name, json_value)
-         || rule_dist_normal(name, json_value)
-         || rule_dist_fixed(name, json_value);
-
-        if (!result) {
-            BK_DEBUG_BREAK();
+        if (!rule_dist_uniform(type, json_value)
+         && !rule_dist_normal(type, json_value)
+         && !rule_dist_fixed(type, json_value)
+        ) {
+            BK_DEBUG_BREAK(); //TODO
         }
     } catch (json::error::base& e) {
         BK_JSON_ADD_TRACE(e);
@@ -252,14 +354,14 @@ void loot_table_parser::rule_entry_dist(cref json_value) {
 
 bool loot_table_parser::rule_dist_uniform(utf8string const& id, cref json_value) {
     try {
-        if (id != "uniform") {
+        if (id != LOOT_DIST_UNIFORM) {
             return false;
-        } else if (json_value.size() > 3) {
+        } else if (json_value.size() != LOOT_DIST_UNIFORM_PARAMS) {
             BK_DEBUG_BREAK();
         }
 
-        auto dist_min  = json::require_key(json_value, 1);
-        auto dist_max  = json::require_key(json_value, 2);
+        auto dist_min  = json::require_key(json_value, LOOT_DIST_UNIFORM_MIN_INDEX);
+        auto dist_max  = json::require_key(json_value, LOOT_DIST_UNIFORM_MAX_INDEX);
 
         rule_dist_min(dist_min);
         rule_dist_max(dist_max);
@@ -274,15 +376,14 @@ bool loot_table_parser::rule_dist_uniform(utf8string const& id, cref json_value)
 
 bool loot_table_parser::rule_dist_normal(utf8string const& id, cref json_value) {
     try {
-        if (id != "normal") {
+        if (id != LOOT_DIST_NORMAL) {
             return false;
-        } else if (json_value.size() > 3) {
+        } else if (json_value.size() != LOOT_DIST_NORMAL_PARAMS) {
             BK_DEBUG_BREAK();
         }
 
-
-        auto dist_mean   = json::require_key(json_value, 1);
-        auto dist_stddev = json::require_key(json_value, 2);
+        auto dist_mean   = json::require_key(json_value, LOOT_DIST_NORMAL_MEAN_INDEX);
+        auto dist_stddev = json::require_key(json_value, LOOT_DIST_NORMAL_STDDEV_INDEX);
 
         rule_dist_mean(dist_mean);
         rule_dist_stddev(dist_stddev);
@@ -297,13 +398,14 @@ bool loot_table_parser::rule_dist_normal(utf8string const& id, cref json_value) 
 
 bool loot_table_parser::rule_dist_fixed(utf8string const& id, cref json_value) {
     try {
-        if (id != "fixed") {
+        if (id != LOOT_DIST_FIXED) {
             return false;
-        } else if (json_value.size() > 2) {
+        } else if (json_value.size() != LOOT_DIST_FIXED_PARAMS) {
             BK_DEBUG_BREAK();
         }
 
-        auto dist_value = json::require_key(json_value, 1);
+        auto dist_value = json::require_key(json_value, LOOT_DIST_FIXED_VALUE_INDEX);
+
         rule_dist_value(dist_value);
 
         entry_dist_ = distribution::make_fixed(dist_value_);

@@ -95,6 +95,7 @@
     <ClInclude Include="grid2d.hpp" />
     <ClInclude Include="gui.hpp" />
     <ClInclude Include="hotkeys.hpp" />
+    <ClInclude Include="item.hpp" />
     <ClInclude Include="types.hpp" />
     <ClInclude Include="languages.hpp" />
     <ClInclude Include="loot_table.hpp" />
@@ -102,6 +103,7 @@
     <ClInclude Include="room.hpp" />
     <ClInclude Include="tile_data.hpp" />
     <ClInclude Include="tile_set.hpp" />
+    <ClInclude Include="util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="impl\commands.cpp" />

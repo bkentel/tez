@@ -10,43 +10,22 @@
 #include <bklib/json_forward.hpp>
 
 #include "types.hpp"
+#include "util.hpp"
+
+#include <bklib/types.hpp>
+#include <bklib/util.hpp>
 
 namespace tez {
-
-template <typename T, typename Tag>
-struct tagged_value {
-    T value;
-};
-
-template <typename T, typename Tag>
-inline bool operator<(tagged_value<T, Tag> const& a, tagged_value<T, Tag> const& b) {
-    return a.value < b.value;
-}
-
-template <typename T, typename Tag>
-inline bool operator>(tagged_value<T, Tag> const& a, tagged_value<T, Tag> const& b) {
-    return a.value > b.value;
-}
-
-template <typename T, typename Tag>
-inline bool operator==(tagged_value<T, Tag> const& a, tagged_value<T, Tag> const& b) {
-    return a.value == b.value;
-}
-
-template <typename T, typename Tag>
-inline bool operator!=(tagged_value<T, Tag> const& a, tagged_value<T, Tag> const& b) {
-    return a.value != b.value;
-}
 
 using random_t  = std::mt19937;
 
 namespace detail {
     struct tag_item_ref;
-    struct tag_table_ref;
+    struct tag_loot_table_ref;
 } //namespace detail
 
-using item_ref  = tagged_value<size_t, detail::tag_item_ref>;
-using table_ref = tagged_value<size_t, detail::tag_table_ref>;
+using item_ref       = tagged_value<size_t, detail::tag_item_ref>;
+using loot_table_ref = tagged_value<size_t, detail::tag_loot_table_ref>;
 
 //==============================================================================
 //==============================================================================
@@ -86,7 +65,7 @@ public:
     template <typename T>
     explicit distribution(std::normal_distribution<T> dist)
       : impl_{[dist](random_t& random) mutable {
-            return static_cast<int>(dist(random)); //TODO
+            return static_cast<int>(std::round(dist(random))); //TODO
         }}
     {
     }
@@ -112,11 +91,11 @@ class loot_table {
 public:
     struct visitor : public boost::static_visitor<bool> {
         bool operator()(item_ref)  const BK_NOEXCEPT { return true; }
-        bool operator()(table_ref) const BK_NOEXCEPT { return false; }
+        bool operator()(loot_table_ref) const BK_NOEXCEPT { return false; }
     };
 
     struct entry {
-        using value_t = boost::variant<item_ref, table_ref>;
+        using value_t = boost::variant<item_ref, loot_table_ref>;
 
         entry() = default;
         entry(value_t value, distribution count)
@@ -131,7 +110,7 @@ public:
     
     using table_entries = std::vector<entry>;
     using item_list     = std::vector<item_ref>;
-    using history_t     = boost::container::flat_set<table_ref>;
+    using history_t     = boost::container::flat_set<loot_table_ref>;
     using weights_t     = std::vector<double>;
 
     loot_table(utf8string id, table_entries&& entries, weights_t const& weights);
@@ -139,16 +118,20 @@ public:
 
     item_list roll(random_t& random);
     void      roll(random_t& random, item_list& items, history_t& history);
+
+    loot_table_ref reference() const { return ref_; }
 private:
     table_entries                entries_ {{}};
     std::discrete_distribution<> distribution_ = std::discrete_distribution<>{};
     std::string                  id_ {{""}};
-    table_ref                    ref_ {{0}};
+    loot_table_ref                    ref_ {{0}};
 };
 
-loot_table* to_loot_table(table_ref  ref);
+loot_table* to_loot_table(loot_table_ref  ref);
 loot_table* to_loot_table(utf8string id);
 loot_table* to_loot_table(string_ref id);
+
+string_ref to_item(item_ref item);
 
 // ROOT          -> {"tables": TABLE_LIST}
 // TABLE_LIST    -> [TABLE*]
@@ -169,47 +152,13 @@ loot_table* to_loot_table(string_ref id);
 // DIST_FIXED    -> ["fixed", DIST_VALUE]
 // DIST_VALUE    -> unsigned
 
-class parser_base {
-public:
-    using cref       = bklib::json::cref;
-    using utf8string = bklib::utf8string;
-
-    explicit parser_base(utf8string const& file_name)
-      : parser_base{std::ifstream{file_name}}
-    {
-    }
-
-    explicit parser_base(std::istream&& in)
-      : parser_base{in}
-    {
-    }
-
-    explicit parser_base(std::istream& in) {
-        if (!in) {
-            BK_DEBUG_BREAK(); //TODO
-        }
-
-        Json::Reader reader;
-
-        auto const result = reader.parse(in, json_root_);
-        if (!result) {
-            std::cout << reader.getFormattedErrorMessages();
-            BK_DEBUG_BREAK(); //TODO
-        }
-    }
-protected:
-    Json::Value json_root_;
-};
-
 struct loot_table_parser : public parser_base {
     using cref = bklib::json::cref;
     using utf8string = bklib::utf8string;
 
     using parser_base::parser_base;
 
-    void parse() {
-        rule_root(json_root_);
-    }
+    void parse() { rule_root(json_root_); }
 
     void rule_root(cref json_value);
 
@@ -234,19 +183,18 @@ struct loot_table_parser : public parser_base {
     void rule_dist_stddev(cref json_value);
     void rule_dist_value(cref json_value);
 
-    utf8string   table_id_     {{""}};
-    int          entry_weight_ {0};
-    utf8string   entry_type_   {{""}};
-    utf8string   entry_id_     {{""}};
-    distribution entry_dist_   {{}};
-    loot_table::entry::value_t entry_value_ {{}};
-    int          dist_min_     {0};
-    int          dist_max_     {0};
-    int          dist_mean_    {0};
-    int          dist_stddev_  {0};
-    int          dist_value_   {0};
-
-    std::vector<loot_table> tables_ {{0}};
+    utf8string                 table_id_     {{""}};
+    int                        entry_weight_ {0};
+    utf8string                 entry_type_   {{""}};
+    utf8string                 entry_id_     {{""}};
+    distribution               entry_dist_   {{}};
+    loot_table::entry::value_t entry_value_  {{}};
+    int                        dist_min_     {0};
+    int                        dist_max_     {0};
+    int                        dist_mean_    {0};
+    int                        dist_stddev_  {0};
+    int                        dist_value_   {0};
+    std::vector<loot_table>    tables_       {{0}};
 };
 
 } //namespace tez

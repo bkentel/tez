@@ -6,4 +6,5 @@ namespace tez {
     using bklib::utf8string;
     using bklib::string_ref;
     using bklib::wstring_ref;
+    using bklib::hash_t;
 } //namespace tez

@@ -139,7 +139,7 @@ void tez::bindings_parser::rule_binding(cref json_binding) {
             BK_DEBUG_BREAK(); //TODO
         }
 
-        cref json_command    = json::require_key(json_binding, 0);
+        cref json_command    = json::require_key(json_binding, 0u);
         cref json_combo_list = json::require_key(json_binding, 1);
 
         cur_command_ = rule_command(json_command);
