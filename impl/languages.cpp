@@ -3,11 +3,12 @@
 #include <bklib/types.hpp>
 #include <bklib/macros.hpp>
 #include <bklib/util.hpp>
+#include <bklib/json.hpp>
 
 using bklib::utf8string;
 using tez::language_id;
 using tez::language_info;
-using tez::language_map;
+//using tez::language_map;
 
 utf8string const language_info::FILE_NAME = R"(./data/language.def)";
 
@@ -71,42 +72,64 @@ language_id language_info::default()  { return lang_default_id; }
 utf8string  language_info::substitute()  { return lang_substitute_string; }
 
 ////////////////////////////////////////////////////////////////////////////////
-language_map::language_map(size_t const size)
-{
-    if (size) {
-        values_.reserve(size);
+// tez::language_string_parser
+////////////////////////////////////////////////////////////////////////////////
+namespace json = bklib::json;
+using tez::language_string_parser;
+
+void language_string_parser::rule_root(cref json_value) {
+    try {
+        rule_lang_string_list_(json_value);
+    } catch (json::error::base& e) {
+        BK_JSON_ADD_TRACE(e);
     }
 }
 
-language_map::language_map(Json::Value const& json)
-{
+void language_string_parser::rule_lang_string_list_(cref json_value) {
+    try {
+        json::require_array(json_value);
 
+        json::for_each_element_skip_on_fail(json_value, [&](cref lang_string) {
+            rule_lang_string_(lang_string);
+            map_.insert(std::move(lang_id_), std::move(string_));
+        });
+    } catch (json::error::base& e) {
+        BK_JSON_ADD_TRACE(e);
+    }
 }
 
-utf8string const& language_map::operator[](language_id const id) const {
-    auto it = values_.find(id);
-    if (it != values_.end()) {
-        return it->second;
+void language_string_parser::rule_lang_string_(cref json_value) {
+    try {
+        json::require_array(json_value);
+        if (json_value.size() != 2) {
+            BK_DEBUG_BREAK(); // TODO
+        }
+
+        auto string_id    = json::require_key(json_value, 0u);
+        auto string_value = json::require_key(json_value, 1u);
+
+        rule_lang_string_id_(string_id);
+        rule_lang_string_value_(string_value);
+    } catch (json::error::base& e) {
+        BK_JSON_ADD_TRACE(e);
     }
-
-    std::cout << "Warning: requested language string not found.";
-
-    it = values_.find(language_info::fallback());
-    if (it != values_.end()) {
-        return it->second;
-    }
-
-    std::cout << "Warning: fallback language string not found.";
-
-    static auto const substitute = language_info::substitute();
-    return substitute;
 }
 
-void language_map::insert(language_id const id, utf8string value) {
-    auto result = values_.emplace(id, std::move(value));
+void language_string_parser::rule_lang_string_id_(cref json_value) {
+    try {
+        lang_id_ = json::require_string(json_value);
+        if (!bklib::is_ascii(lang_id_.c_str())) {
+            BK_DEBUG_BREAK(); //TODO
+        }
+    } catch (json::error::base& e) {
+        BK_JSON_ADD_TRACE(e);
+    }
+}
 
-    if (!result.second) {
-        BK_DEBUG_BREAK();
-        std::cout << "Warning: duplicate language.";
+void language_string_parser::rule_lang_string_value_(cref json_value) {
+    try {
+        string_ = json::require_string(json_value);
+    } catch (json::error::base& e) {
+        BK_JSON_ADD_TRACE(e);
     }
 }

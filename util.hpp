@@ -3,7 +3,19 @@
 #include <bklib/config.hpp>
 #include <bklib/util.hpp>
 
+#include "types.hpp"
+
 namespace tez {
+////////////////////////////////////////////////////////////////////////////////
+// zip
+////////////////////////////////////////////////////////////////////////////////
+template <typename T1, typename T2, typename F>
+inline void zip(T1 first1, T1 last1, T2 first2, T2 last2, F function) {
+    while (first1 != last1 && first2 != last2) {
+        function(*first1++, *first2++);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // tagged_value
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,25 +83,56 @@ struct hashed_string {
 inline bool operator<(hashed_string const& lhs, hashed_string const& rhs) {
     return lhs.hash < rhs.hash;
 }
+
+struct hash_wrapper_base {
+protected:
+    explicit hash_wrapper_base(hash_t hash)
+      : value {hash} {}
+public:
+    hash_wrapper_base(utf8string const& string)
+      : value {bklib::utf8string_hash(string)} {}
+    hash_wrapper_base(char const* string)
+      : value {bklib::utf8string_hash(string)} {}
+    hash_wrapper_base(string_ref string)
+      : value {bklib::utf8string_hash(string)} {}
+
+    hash_t value;
+};
+
+template <typename Tag>
+struct hash_wrapper : public hash_wrapper_base {
+    using hash_wrapper_base::hash_wrapper_base;
+
+    hash_wrapper(tagged_value<hash_t, Tag> hash)
+      : hash_wrapper_base{hash.value} {}
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // parser_base
 ////////////////////////////////////////////////////////////////////////////////
-class parser_base {
+class parser_base_common {
 public:
     using cref       = bklib::json::cref;
     using utf8string = bklib::utf8string;
 
-    explicit parser_base(utf8string const& file_name)
-      : parser_base{std::ifstream{file_name}}
+    parser_base_common() = default;
+
+    explicit parser_base_common(bklib::utf8string const& file_name)
+      : parser_base_common{std::ifstream{file_name}}
     {
     }
 
-    explicit parser_base(std::istream&& in)
-      : parser_base{in}
+    explicit parser_base_common(bklib::platform_string const& file_name)
+      : parser_base_common{std::ifstream{file_name}} //TODO
     {
     }
 
-    explicit parser_base(std::istream& in) {
+    explicit parser_base_common(std::istream&& in)
+      : parser_base_common{in}
+    {
+    }
+
+    explicit parser_base_common(std::istream& in) {
         if (!in) {
             BK_DEBUG_BREAK(); //TODO
         }
@@ -104,6 +147,20 @@ public:
     }
 protected:
     Json::Value json_root_;
+};
+
+template <typename Derived>
+class parser_base : public parser_base_common {
+public :
+    using parser_base_common::parser_base_common;
+
+    void parse() {
+        static_cast<Derived*>(this)->rule_root(json_root_);
+    }
+
+    void parse(cref json_value) {
+        static_cast<Derived*>(this)->rule_root(json_value);
+    }
 };
 
 } //namespace tez

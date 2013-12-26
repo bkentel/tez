@@ -20,12 +20,12 @@ namespace tez {
 using random_t  = std::mt19937;
 
 namespace detail {
-    struct tag_item_ref;
-    struct tag_loot_table_ref;
+    struct tag_item;
+    struct tag_loot_table;
 } //namespace detail
 
-using item_ref       = tagged_value<size_t, detail::tag_item_ref>;
-using loot_table_ref = tagged_value<size_t, detail::tag_loot_table_ref>;
+using item_ref       = tagged_value<hash_t, detail::tag_item>;
+using loot_table_ref = tagged_value<hash_t, detail::tag_loot_table>;
 
 //==============================================================================
 //==============================================================================
@@ -152,13 +152,12 @@ string_ref to_item(item_ref item);
 // DIST_FIXED    -> ["fixed", DIST_VALUE]
 // DIST_VALUE    -> unsigned
 
-struct loot_table_parser : public parser_base {
+struct loot_table_parser : public parser_base<loot_table_parser> {
     using cref = bklib::json::cref;
     using utf8string = bklib::utf8string;
 
     using parser_base::parser_base;
-
-    void parse() { rule_root(json_root_); }
+    using parser_base::parse;
 
     void rule_root(cref json_value);
 

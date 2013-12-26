@@ -1,84 +1,112 @@
 #pragma once
 
+#include <boost/container/flat_set.hpp>
+
+#include <bklib/json_forward.hpp>
+
 #include "util.hpp"
 #include "types.hpp"
+#include "languages.hpp"
 
 namespace tez {
 
 namespace detail {
+    struct tag_item;
     struct tag_item_category;
     struct tag_item_type;
     struct tag_item_tag;
     struct tag_item_attribute;
 } //namespace detail
 
+using item_ref           = tagged_value<hash_t, detail::tag_item>;
 using item_category_ref  = tagged_value<hash_t, detail::tag_item_category>;
 using item_type_ref      = tagged_value<hash_t, detail::tag_item_type>;
 using item_tag_ref       = tagged_value<hash_t, detail::tag_item_tag>;
 using item_attribute_ref = tagged_value<hash_t, detail::tag_item_attribute>;
 
-struct item_attribute {
-    
+////////////////////////////////////////////////////////////////////////////////
+// item_attribute
+////////////////////////////////////////////////////////////////////////////////
+class item_attribute {
+public:
+    enum class type {
+        integer, string, floating_point
+    };
+
+    item_attribute(item_attribute_ref name, int32_t int_val)
+      : int_val_ {int_val}
+      , name_    {name}
+      , type_    {type::integer}
+    {
+    }
+
+    item_attribute(item_attribute_ref name, float float_val)
+      : float_val_ {float_val}
+      , name_      {name}
+      , type_      {type::floating_point}
+    {
+    }
+
+    item_attribute(item_attribute_ref name, utf8string const& str_val)
+      : name_ {name}
+      , type_ {type::string}
+    {
+        auto const count = std::min(sizeof(str_val_) - 1, str_val.size());
+        std::strncpy(str_val_, str_val.c_str(), sizeof(str_val_));
+        str_val_[sizeof(str_val_) - 1] = 0;
+    }
+
+    item_attribute_ref name() const BK_NOEXCEPT { return name_; }
+private:
+    union {
+        char    str_val_[32];
+        int32_t int_val_;
+        float   float_val_;
+    };
+
+    item_attribute_ref name_;
+    type               type_;
 };
 
+inline bool operator<(item_attribute const& lhs, item_attribute const& rhs) {
+    return lhs.name() < rhs.name();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// item_definition
+////////////////////////////////////////////////////////////////////////////////
 struct item_definition {
     using hash_t = bklib::hash_t;
 
     template <typename T>
     using set_t = boost::container::flat_set<T>;
 
-    hashed_string             id;
-    item_category_ref         category;
-    item_type_ref             type;
-    unsigned                  value;
-    set_t<item_tag_ref>       tags;
-    set_t<item_attribute_ref> attributes;
-    set_t<hashed_string>      descriptions;
+    item_definition() = default;
+
+    item_definition(item_definition const&) = delete;
+    item_definition& operator=(item_definition const&) = delete;
+
+    item_definition(item_definition&&) = default;
+    item_definition& operator=(item_definition&&) = default;
+
+    hashed_string         id;
+    item_category_ref     category;
+    item_type_ref         type;
+    unsigned              base_value;
+    set_t<item_tag_ref>   tags;
+    set_t<item_attribute> attributes;
+    language_string_map   names;
+    language_string_map   descriptions;
 };
 
-namespace detail {
-    struct tag_language;
-} //namespace detail
-
-using language_ref = tagged_value<hash_t, detail::tag_language>;
-
-class language_string_map {
+////////////////////////////////////////////////////////////////////////////////
+// item_parser
+////////////////////////////////////////////////////////////////////////////////
+class item_parser : public parser_base<item_parser> {
+    friend parser_base<item_parser>;
 public:
-    using key_t       = language_ref;
-    using value_t     = utf8string;
-    using container_t = boost::container::flat_map<key_t, value_t>;
-
-    template <typename T1, typename T2, typename F>
-    static void zip(T1 first1, T1 last1, T2 first2, T2 last2, F function) {
-        while (first1 != last1 && first2 != last2) {
-            function(*first1++, *first2++);
-        }
-    }
-
-    template <typename LangIter, typename StringIter>
-    void insert(LangIter first_l, LangIter last_l, StringIter first_s, StringIter last_s) {
-        strings_.reserve(last_l  - first_l);
-
-        zip(first_l, last_l, first_s, last_s, [&](utf8string const& lang_id, utf8string& string) {
-            language_ref const ref {bklib::utf8string_hash(lang_id)};
-            auto const result = strings_.emplace(ref, std::move(string));
-            if (!result.second) {
-                BK_DEBUG_BREAK();
-            }
-        });   
-    }
-private:
-    container_t strings_;
-};
-
-struct language_parser : public parser_base {
-};
-
-struct item_parser : public parser_base {
     using parser_base::parser_base;
-
-    void parse(cref json_value) { rule_root(json_value); }
-    void parse() { parse(json_root_); }
+    using parser_base::parse;
 
     void rule_root(cref json_value);
     void rule_item_list(cref json_value);
@@ -91,16 +119,26 @@ struct item_parser : public parser_base {
     void rule_item_base_value(cref json_value);
     void rule_item_attr_list(cref json_value);
     void rule_item_attr(cref json_value);
-    void rule_attr_name(cref json_value);
-    void rule_attr_value(cref json_value);
+    utf8string rule_attr_name(cref json_value);
+    item_attribute rule_attr_value(cref json_value, item_attribute_ref name);
     void rule_item_name(cref json_value);
     void rule_item_desc(cref json_value);
-    void rule_lang_string_list(cref json_value);
-    void rule_lang_string(cref json_value);
-    void rule_lang_string_id(cref json_value);
-    void rule_lang_string_value(cref json_value);
+
+    using map_t = boost::container::flat_map<item_ref, item_definition>    ;
+
+    map_t&& get() {
+        return std::move(items_);
+    }
 
     item_definition item_;
+    map_t           items_;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// item functions
+////////////////////////////////////////////////////////////////////////////////
+
+void reload_items(bklib::utf8string filename);
+item_definition const* get_item(hash_wrapper<detail::tag_item> ref);
 
 } //namespace tez

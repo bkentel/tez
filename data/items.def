@@ -1,9 +1,23 @@
-{ "items": [
+{
 
-{　  "id": "cheese"
+"item_attributes": [
+    ["nutrition",    "integer"]
+  , ["decay_time",   "integer"]
+  , ["weight_class", "string"]
+  , ["dmg_min",      "integer"]
+  , ["dmg_max",      "integer"]
+  , ["dmg_add",      "integer"]
+  , ["dmg_type",     "string"]
+  , ["crit_chance",  "integer"]
+  , ["crit_mult",    "float"]
+],
+
+"items": [
+{   "id": "cheese"
   , "category": "consumable"
   , "type": "food"
   , "tags": ["animal_product", "milk_product"]
+  , "weight": 10
   , "base_value": 100
   , "attributes": [
         ["nutrition", 100]
@@ -11,17 +25,18 @@
     ]
   , "name": [
         ["en", "cheese"]
-      ,　["jp", "チーズ"]
+      , ["jp", "チーズ"]
     ]
   , "description": [
         ["en", "Delicious and creamy."]
-      ,　["jp", "とてもクリーミーで美味しい。"]
+      , ["jp", "とてもクリーミーで美味しい。"]
     ]
 },
 {   "id": "apple"
   , "category": "consumable"
   , "type": "food"
   , "tags": ["plant_product", "fruit"]
+  , "weight": 2
   , "base_value": 10
   , "attributes": [
         ["nutrition", 10]
@@ -29,17 +44,18 @@
     ]
   , "name": [
         ["en", "apple"]
-      ,　["jp", "林檎"]
+      , ["jp", "林檎"]
     ]
   , "description": [
         ["en", "Sweet and crispy."]
-      ,　["jp", "甘くてしゃりっとする。"]
+      , ["jp", "甘くてしゃりっとする。"]
     ]
 },
 {   "id": "meat"
   , "category": "consumable"
   , "type": "food"
   , "tags": ["animal_product", "meat"]
+  , "weight": 15
   , "base_value": 150
   , "attributes": [
         ["nutrition", 150]
@@ -47,17 +63,18 @@
     ]
   , "name": [
         ["en", "meat"]
-      ,　["jp", "肉"]
+      , ["jp", "肉"]
     ]
   , "description": [
         ["en", "Bloody and rich in fat."]
-      ,　["jp", "血に塗れて脂肪が豊富にある。"]
+      , ["jp", "血に塗れて脂肪が豊富にある。"]
     ]
 },
 {   "id": "candy"
   , "category": "consumable"
   , "type": "food"
   , "tags": ["sweet"]
+  , "weight": 1
   , "base_value": 2
   , "attributes": [
         ["nutrition", 5]
@@ -65,11 +82,11 @@
     ]
   , "name": [
         ["en", "candy"]
-      ,　["jp", "飴"]
+      , ["jp", "飴"]
     ]
   , "description": [
         ["en", "Almost too sweet."]
-      ,　["jp", "甘すぎるかな。"]
+      , ["jp", "甘すぎるかな。"]
     ]
 },
 
@@ -77,19 +94,22 @@
   , "category": "weapon"
   , "type": "axe"
   , "tags": ["edge_weapon"]
+  , "weight": 100
   , "base_value": 200
   , "attributes": [
-        ["weight", "light"]
-      , ["damage", [1, 5]]
-      , ["critical", [1, 3]]
+        ["weight_class", "light"]
+      , ["dmg_min", 1]
+      , ["dmg_max", 3]
+      , ["crit_chance", 10]
+      , ["dmg_type", "pierce"]
     ]
   , "name": [
         ["en", "hand axe"]
-      ,　["jp", "手斧"]
+      , ["jp", "手斧"]
     ]
   , "description": [
         ["en", "Good for chopping wood; bones too."]
-      ,　["jp", "薪をばっさり伐ることができる。骨もな。"]
+      , ["jp", "薪をばっさり伐ることができる。骨もな。"]
     ]
 },
 
@@ -97,39 +117,45 @@
   , "category": "weapon"
   , "type": "sword"
   , "tags": ["edge_weapon"]
+  , "weight": 80
   , "base_value": 200
   , "attributes": [
-        ["weight", "light"]
-      , ["damage", [1, 5]]
-      , ["critical", [1, 3]]
+        ["weight_class", "light"]
+      , ["dmg_min", 1]
+      , ["dmg_max", 3]
+      , ["crit_chance", 10]
+      , ["dmg_type", "pierce"]
     ]
   , "name": [
         ["en", "short sword"]
-      ,　["jp", "短剣"]
+      , ["jp", "短剣"]
     ]
   , "description": [
         ["en", "Sharp and pointy."]
-      ,　["jp", "鋭くて尖がっている。"]
+      , ["jp", "鋭くて尖がっている。"]
     ]
-}
+},
 
 {   "id": "dagger"
   , "category": "weapon"
   , "type": "dagger"
   , "tags": ["pierce_weapon"]
+  , "weight": 30
   , "base_value": 200
   , "attributes": [
-        ["weight", "light"]
-      , ["damage", [1, 3]]
-      , ["critical", [10, 2]]
+        ["weight_class", "light"]
+      , ["dmg_min", 1]
+      , ["dmg_max", 3]
+      , ["crit_chance", 10]
+      , ["dmg_type", "pierce"]
     ]
   , "name": [
         ["en", "dagger"]
-      ,　["jp", "ダガー"]
+      , ["jp", "ダガー"]
     ]
   , "description": [
         ["en", "Short but deadly."]
-      ,　["jp", "短いが息の根を確実に止めることができる。"]
+      , ["jp", "短いが息の根を確実に止めることができる。"]
     ]
 }
 

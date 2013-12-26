@@ -2,18 +2,9 @@
 #include "loot_table.hpp"
 #include "item.hpp"
 
-TEST(LootTable, Basic) {
-    std::vector<tez::utf8string> langs   = {"en", "jp", "de"};
-    std::vector<tez::utf8string> strings = {"english", "japanese", "german", "spanish"};
+TEST(LootTable, Basic) {   
+    tez::reload_items("./data/items.def");
 
-    tez::language_string_map lang_map;
-
-    lang_map.insert(
-        std::begin(langs)
-      , std::end(langs)
-      , std::begin(strings)
-      , std::end(strings)
-    );
 
     auto in = std::ifstream{"./data/loot.def"};
 

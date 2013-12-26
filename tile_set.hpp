@@ -76,8 +76,8 @@ struct tile_variation {
     tile_variation& operator=(tile_variation const&) = delete;
     tile_variation& operator=(tile_variation&&) = default;;
 
-    language_map name;
-    language_map description;
+    language_string_map name;
+    language_string_map description;
     location_t   location;
     unsigned     weight;
 };
