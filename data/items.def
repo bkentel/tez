@@ -3,7 +3,6 @@
 "item_attributes": [
     ["nutrition",    "integer"]
   , ["decay_time",   "integer"]
-  , ["weight_class", "string"]
   , ["dmg_min",      "integer"]
   , ["dmg_max",      "integer"]
   , ["dmg_add",      "integer"]
@@ -93,12 +92,11 @@
 {   "id": "hand_axe"
   , "category": "weapon"
   , "type": "axe"
-  , "tags": ["edge_weapon"]
+  , "tags": ["edge_weapon", "light_weapon"]
   , "weight": 100
   , "base_value": 200
   , "attributes": [
-        ["weight_class", "light"]
-      , ["dmg_min", 1]
+        ["dmg_min", 1]
       , ["dmg_max", 3]
       , ["crit_chance", 10]
       , ["dmg_type", "pierce"]
@@ -116,12 +114,11 @@
 {   "id": "short_sword"
   , "category": "weapon"
   , "type": "sword"
-  , "tags": ["edge_weapon"]
+  , "tags": ["edge_weapon", "light_weapon"]
   , "weight": 80
   , "base_value": 200
   , "attributes": [
-        ["weight_class", "light"]
-      , ["dmg_min", 1]
+        ["dmg_min", 1]
       , ["dmg_max", 3]
       , ["crit_chance", 10]
       , ["dmg_type", "pierce"]
@@ -139,12 +136,11 @@
 {   "id": "dagger"
   , "category": "weapon"
   , "type": "dagger"
-  , "tags": ["pierce_weapon"]
+  , "tags": ["pierce_weapon", "light_weapon"]
   , "weight": 30
   , "base_value": 200
   , "attributes": [
-        ["weight_class", "light"]
-      , ["dmg_min", 1]
+        ["dmg_min", 1]
       , ["dmg_max", 3]
       , ["crit_chance", 10]
       , ["dmg_type", "pierce"]
@@ -156,6 +152,89 @@
   , "description": [
         ["en", "Short but deadly."]
       , ["jp", "短いが息の根を確実に止めることができる。"]
+    ]
+},
+
+{   "id": "hammer"
+  , "category": "weapon"
+  , "type": "hammer"
+  , "tags": ["blunt_weapon", "light_weapon"]
+  , "weight": 80
+  , "base_value": 200
+  , "attributes": [
+        ["dmg_min", 2]
+      , ["dmg_max", 5]
+      , ["crit_chance", 10]
+      , ["dmg_type", "blunt"]
+    ]
+  , "name": [
+        ["en", "hammer"]
+      , ["jp", "鉄鎚"]
+    ]
+  , "description": [
+        ["en", "Good for hammering nails; skulls too."]
+      , ["jp", "釘を打つには適している。頭を打つにも使えそう。"]
+    ]
+},
+
+{   "id": "crude_bow"
+  , "category": "weapon"
+  , "type": "bow"
+  , "tags": ["range_weapon"]
+  , "weight": 100
+  , "base_value": 200
+  , "attributes": [
+        ["range", 5]
+      , ["crit_chance", 10]
+    ]
+  , "name": [
+        ["en", "crude bow"]
+      , ["jp", "粗末な弓"]
+    ]
+  , "description": [
+        ["en", "It shoots arrows."]
+      , ["jp", "矢を射る。"]
+    ]
+},
+
+{   "id": "short_staff"
+  , "category": "weapon"
+  , "type": "staff"
+  , "tags": ["blunt_weapon", "light_weapon"]
+  , "weight": 80
+  , "base_value": 200
+  , "attributes": [
+        ["dmg_min", 2]
+      , ["dmg_max", 5]
+      , ["crit_chance", 10]
+      , ["dmg_type", "blunt"]
+    ]
+  , "name": [
+        ["en", "short staff"]
+      , ["jp", "短杖"]
+    ]
+  , "description": [
+        ["en", "Not very good for helping one walk, but useful in a fight."]
+      , ["jp", "体をもたれるにはちょっと短いが、、喧嘩になれば役に立つ。"]
+    ]
+},
+
+{   "id": "simple_wand"
+  , "category": "focus"
+  , "type": "wand"
+  , "tags": ["magic_focus"]
+  , "weight": 10
+  , "base_value": 400
+  , "attributes": [
+        ["crit_chance", 10]
+    ]
+  , "name": [
+        ["en", "simple wand"]
+      , ["jp", "飾り気のないワンド"]
+    ]
+  , "description": [
+        ["en", "A simple wand to focus one's magical energies."]
+      , ["jp", "ごく簡単なワンドだけど、魔法の力を集中させることができる。"]
     ]
 }
 

@@ -2,27 +2,30 @@
 #include "loot_table.hpp"
 #include "item.hpp"
 
-TEST(LootTable, Basic) {   
-    tez::reload_items("./data/items.def");
+#include <Windows.h>
+#include <fcntl.h>
+#include <io.h>
+#include <stdio.h>
 
-
-    auto in = std::ifstream{"./data/loot.def"};
-
-    auto parser = tez::loot_table_parser{in};
-    parser.parse();
-
-    auto const table = tez::to_loot_table(bklib::string_ref("common"));
+TEST(LootTable, Basic) {
+    tez::loot_table_table::reload("./data/loot.def");
+    tez::item_table::reload("./data/items.def");
 
     tez::random_t random{150123};
+
+    auto table = tez::loot_table_table::get("orc");
 
     while (true) {
         std::cout << "****rolling***" << std::endl;
 
         auto items = table->roll(random);
 
-        for (auto const item : items) {
-            auto const name = tez::to_item(item);
-            std::cout << name << std::endl;
+        auto const en = tez::language_ref{bklib::utf8string_hash("en")};
+        auto const jp = tez::language_ref{bklib::utf8string_hash("jp")};
+
+        for (auto const item_ref : items) {
+            auto const item = tez::item_table::get(item_ref);
+            std::cout << item->names.get(en) << std::endl;
         }
     }
 }

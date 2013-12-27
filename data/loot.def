@@ -24,6 +24,11 @@
         [1, "table", "common_weapon"]
       , [1, "table", "common_food"]
     ]
+},
+{   "id": "orc"
+  , "table": [
+        [1, "table", "common", ["uniform", 1, 5]]
+    ]
 }
 
 ]}

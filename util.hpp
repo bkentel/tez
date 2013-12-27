@@ -1,11 +1,19 @@
 #pragma once
 
+#include <boost/container/flat_map.hpp>
+
 #include <bklib/config.hpp>
 #include <bklib/util.hpp>
 
 #include "types.hpp"
 
 namespace tez {
+
+template <size_t N>
+inline bklib::string_ref make_string_ref(char const (&str)[N]) {
+    return bklib::string_ref{str, N - 1};
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // zip
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +75,7 @@ struct hashed_string {
 
     hashed_string(bklib::utf8string str)
       : string {std::move(str)}
-      , hash   {bklib::utf8string_hash(str)}
+      , hash   {bklib::utf8string_hash(string)}
     {
     }
 
@@ -105,6 +113,47 @@ struct hash_wrapper : public hash_wrapper_base {
 
     hash_wrapper(tagged_value<hash_t, Tag> hash)
       : hash_wrapper_base{hash.value} {}
+};
+
+namespace detail {
+    template <typename Tag> struct tag_traits;
+}
+
+template <typename Tag>
+struct data_table {
+    using traits      = detail::tag_traits<Tag>;
+    using pointer     = typename traits::pointer;
+    using container_t = boost::container::flat_map<
+        typename traits::ref
+      , typename traits::type
+    >;
+
+    static bool is_loaded() { return is_loaded_; }
+
+    static void reload(bklib::utf8string filename) {
+        typename traits::parser parser {filename};
+        parser.parse();
+
+        if (!is_loaded()) {
+            data_ = parser.get();
+        } else {
+            BK_DEBUG_BREAK(); //TODO
+        }
+
+        is_loaded_ = true;
+    }
+
+    static pointer const get(hash_wrapper<Tag> ref) {
+        BK_ASSERT(is_loaded_);
+
+        auto const key = typename traits::ref {ref.value};
+
+        auto const where = data_.find(key);
+        return where != std::cend(data_) ? &where->second : nullptr;
+    }
+private:
+    static bool        is_loaded_;
+    static container_t data_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

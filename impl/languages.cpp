@@ -77,6 +77,14 @@ utf8string  language_info::substitute()  { return lang_substitute_string; }
 namespace json = bklib::json;
 using tez::language_string_parser;
 
+namespace {
+
+size_t const INDEX_LANG_ID     = 0;
+size_t const INDEX_LANG_STRING = 1;
+size_t const SIZE_LANG_STRING = 2;
+
+} //namespace
+
 void language_string_parser::rule_root(cref json_value) {
     try {
         rule_lang_string_list_(json_value);
@@ -91,6 +99,8 @@ void language_string_parser::rule_lang_string_list_(cref json_value) {
 
         json::for_each_element_skip_on_fail(json_value, [&](cref lang_string) {
             rule_lang_string_(lang_string);
+
+            //add the pair to the map
             map_.insert(std::move(lang_id_), std::move(string_));
         });
     } catch (json::error::base& e) {
@@ -101,12 +111,16 @@ void language_string_parser::rule_lang_string_list_(cref json_value) {
 void language_string_parser::rule_lang_string_(cref json_value) {
     try {
         json::require_array(json_value);
-        if (json_value.size() != 2) {
+
+        auto const size = json_value.size();
+        if (size < SIZE_LANG_STRING) {
+            BK_DEBUG_BREAK(); // TODO
+        } else if (size > SIZE_LANG_STRING) {
             BK_DEBUG_BREAK(); // TODO
         }
 
-        auto string_id    = json::require_key(json_value, 0u);
-        auto string_value = json::require_key(json_value, 1u);
+        auto string_id    = json::require_key(json_value, INDEX_LANG_ID);
+        auto string_value = json::require_key(json_value, INDEX_LANG_STRING);
 
         rule_lang_string_id_(string_id);
         rule_lang_string_value_(string_value);
@@ -118,9 +132,6 @@ void language_string_parser::rule_lang_string_(cref json_value) {
 void language_string_parser::rule_lang_string_id_(cref json_value) {
     try {
         lang_id_ = json::require_string(json_value);
-        if (!bklib::is_ascii(lang_id_.c_str())) {
-            BK_DEBUG_BREAK(); //TODO
-        }
     } catch (json::error::base& e) {
         BK_JSON_ADD_TRACE(e);
     }

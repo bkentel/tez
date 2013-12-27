@@ -90,7 +90,7 @@ public:
 
         zip(first_l, last_l, first_s, last_s, [&](utf8string const& lang_id, utf8string& string) {
             insert(lang_id, std::move(string));
-        });   
+        });
     }
 
     void insert(utf8string const& id, utf8string&& value) {

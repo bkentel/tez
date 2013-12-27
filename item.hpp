@@ -72,6 +72,15 @@ inline bool operator<(item_attribute const& lhs, item_attribute const& rhs) {
     return lhs.name() < rhs.name();
 }
 
+#define BK_COPY_DELETE(name)\
+name(name const&) = delete;\
+name& operator=(name const&) = delete
+
+#define BK_MOVE_DEFAULT(name)\
+name(name&&) = default;\
+name& operator=(name&&) = default
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // item_definition
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,15 +92,13 @@ struct item_definition {
 
     item_definition() = default;
 
-    item_definition(item_definition const&) = delete;
-    item_definition& operator=(item_definition const&) = delete;
-
-    item_definition(item_definition&&) = default;
-    item_definition& operator=(item_definition&&) = default;
+    BK_COPY_DELETE(item_definition);
+    BK_MOVE_DEFAULT(item_definition);
 
     hashed_string         id;
     item_category_ref     category;
     item_type_ref         type;
+    unsigned              weight;
     unsigned              base_value;
     set_t<item_tag_ref>   tags;
     set_t<item_attribute> attributes;
@@ -116,6 +123,7 @@ public:
     void rule_item_type(cref json_value);
     void rule_item_tag_list(cref json_value);
     void rule_item_tag(cref json_value);
+    void rule_item_weight(cref json_value);
     void rule_item_base_value(cref json_value);
     void rule_item_attr_list(cref json_value);
     void rule_item_attr(cref json_value);
@@ -124,7 +132,7 @@ public:
     void rule_item_name(cref json_value);
     void rule_item_desc(cref json_value);
 
-    using map_t = boost::container::flat_map<item_ref, item_definition>    ;
+    using map_t = boost::container::flat_map<item_ref, item_definition>;
 
     map_t&& get() {
         return std::move(items_);
@@ -137,8 +145,23 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 // item functions
 ////////////////////////////////////////////////////////////////////////////////
+namespace detail {
+    template <> struct tag_traits<tag_item> {
+        using type    = item_definition;
+        using pointer = item_definition*;
+        using ref     = item_ref;
+        using parser  = item_parser;
+    };
+} //namespace detail
 
-void reload_items(bklib::utf8string filename);
-item_definition const* get_item(hash_wrapper<detail::tag_item> ref);
+extern template data_table<detail::tag_item>;
+using item_table = data_table<detail::tag_item>;
+
+inline string_ref ref_to_id(item_ref ref) {
+    auto const item = item_table::get(ref);
+
+    if (item) return {item->id.string};
+    else      return {""};
+}
 
 } //namespace tez

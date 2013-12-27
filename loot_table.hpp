@@ -107,7 +107,7 @@ public:
         value_t      value = item_ref{0};
         distribution count = distribution{};
     };
-    
+
     using table_entries = std::vector<entry>;
     using item_list     = std::vector<item_ref>;
     using history_t     = boost::container::flat_set<loot_table_ref>;
@@ -119,19 +119,13 @@ public:
     item_list roll(random_t& random);
     void      roll(random_t& random, item_list& items, history_t& history);
 
-    loot_table_ref reference() const { return ref_; }
+    loot_table_ref reference() const { return loot_table_ref {id_.hash}; }
+    string_ref id() const { return {id_.string}; }
 private:
     table_entries                entries_ {{}};
     std::discrete_distribution<> distribution_ = std::discrete_distribution<>{};
-    std::string                  id_ {{""}};
-    loot_table_ref                    ref_ {{0}};
+    tez::hashed_string id_ {{""}};
 };
-
-loot_table* to_loot_table(loot_table_ref  ref);
-loot_table* to_loot_table(utf8string id);
-loot_table* to_loot_table(string_ref id);
-
-string_ref to_item(item_ref item);
 
 // ROOT          -> {"tables": TABLE_LIST}
 // TABLE_LIST    -> [TABLE*]
@@ -182,6 +176,10 @@ struct loot_table_parser : public parser_base<loot_table_parser> {
     void rule_dist_stddev(cref json_value);
     void rule_dist_value(cref json_value);
 
+    using map_t = boost::container::flat_map<loot_table_ref, loot_table>;
+
+    map_t&& get() { return std::move(tables_); }
+
     utf8string                 table_id_     {{""}};
     int                        entry_weight_ {0};
     utf8string                 entry_type_   {{""}};
@@ -193,7 +191,31 @@ struct loot_table_parser : public parser_base<loot_table_parser> {
     int                        dist_mean_    {0};
     int                        dist_stddev_  {0};
     int                        dist_value_   {0};
-    std::vector<loot_table>    tables_       {{0}};
+
+    map_t tables_ = {{}};
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// loot table functions
+////////////////////////////////////////////////////////////////////////////////
+namespace detail {
+    template <> struct tag_traits<tag_loot_table> {
+        using type    = loot_table;
+        using pointer = loot_table*;
+        using ref     = loot_table_ref;
+        using parser  = loot_table_parser;
+    };
+} //namespace detail
+
+extern template data_table<detail::tag_loot_table>;
+using loot_table_table = data_table<detail::tag_loot_table>;
+
+inline string_ref ref_to_id(loot_table_ref ref) {
+    auto const loot_table = loot_table_table::get(ref);
+
+    if (loot_table) return {loot_table->id()};
+    else            return {""};
+}
+
 
 } //namespace tez

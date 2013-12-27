@@ -1,8 +1,8 @@
 ROOT         = {"tables": TABLE_LIST}
 TABLE_LIST   = [TABLE*]
 TABLE        = {TABLE_ID, TABLE_DEF}
-TABLE_ID     = string
-TABLE_DEF    = [TABLE_ENTRY*]
+TABLE_ID     = "id": string
+TABLE_DEF    = "table": [TABLE_ENTRY*]
 TABLE_ENTRY  = [ENTRY_WEIGHT, ENTRY_TYPE, ENTRY_ID, ENTRY_AMOUNT]
 ENTRY_WEIGHT = int
 ENTRY_TYPE   = string
