@@ -79,6 +79,12 @@ struct rect_union {
         }
     }
 
+    void expand(T scale) {
+        for (auto& r : rects) {
+            r = rect {r.left()*scale, r.top()*scale, r.right()*scale, r.bottom()*scale};
+        }
+    }
+
     static rect_union merge(rect_union&& a, rect_union&& b) {
         rect_union& from = a.rects.capacity() <   b.rects.capacity() ? a : b;
         rect_union& to   = a.rects.capacity() >=  b.rects.capacity() ? a : b;
@@ -149,7 +155,8 @@ inline T ceil_div(T const dividend, T const divisor) {
     return std::ceil(dividend / divisor);
 }
 
-struct grid_layout {
+class grid_layout {
+public:
     struct params_t {
         int cell_size = 10;
 
@@ -168,15 +175,72 @@ struct grid_layout {
         int cells_w = field_w / cell_size;
         int cells_h = field_h / cell_size;
     };
-
-    using rect = bklib::axis_aligned_rect<int>;
+    //--------------------------------------------------------------------------
+    using rect         = bklib::axis_aligned_rect<int>;
     using rect_union_t = rect_union<int>;
-    using cell_t = std::vector<rect_union_t>;
-
-    using random_t = tez::random_t;
+    using cell_t       = std::vector<rect_union_t>;
+    using random_t     = tez::random_t;
     using dist_normal  = std::normal_distribution<float>;
     using dist_uniform = std::uniform_int_distribution<int>;
+    //--------------------------------------------------------------------------
 
+    //--------------------------------------------------------------------------
+    //
+    //--------------------------------------------------------------------------
+    std::vector<rect_union_t> operator()(random_t& random) {
+        return (*this)(params_t{}, random);
+    }
+
+    //--------------------------------------------------------------------------
+    // using params, generate a random layout.
+    //--------------------------------------------------------------------------
+    std::vector<rect_union_t> operator()(
+        params_t const params, random_t& random
+    ) {
+        params_ = params;
+
+        make_generators_();
+
+        size_t const cell_count = params_.cells_h * params_.cells_w;
+
+        cells_.clear();
+        cells_.resize(cell_count);
+
+        //----------------------------------------------------------------------
+        // for each cell, generate a random number of rooms and merge.
+        //----------------------------------------------------------------------
+        for_each_i(cells_, [&](cell_t& cell, size_t const i) {
+            auto const cell_rect = get_cell_rect_(i);
+
+            auto const count = count_gen_(random);
+            for (auto n = 0; n < count; ++n) {
+                auto const room_rect = generate_rect_(cell_rect, random);
+                cell.emplace_back(room_rect);
+            }
+
+            merge_cell_rects_(cell);
+        });
+       
+        shift_cell_rects_(random);
+
+        //----------------------------------------------------------------------
+        // merge the contents of all the cells into one vector.
+        //----------------------------------------------------------------------
+        std::vector<rect_union_t> result;
+        result.reserve(cell_count);
+
+        for (auto& cell : cells_) {
+            for (auto& rect : cell) {
+                if (!rect.empty()) {
+                    //rect.expand(32);
+                    result.emplace_back(rect);
+                }
+            }
+        }
+
+        return result;
+    }
+private:
     //--------------------------------------------------------------------------
     params_t params_;
 
@@ -185,8 +249,6 @@ struct grid_layout {
 
     std::vector<cell_t> cells_;
     //--------------------------------------------------------------------------
-
-    grid_layout() {}
 
     void make_generators_() {
         auto& p = params_;
@@ -208,7 +270,7 @@ struct grid_layout {
     }
 
     //--------------------------------------------------------------------------
-    //
+    // generate a rectangle that fits inside cell_rect.
     //--------------------------------------------------------------------------
     rect generate_rect_(rect const& cell_rect, random_t& random) const {
         auto& p = params_;
@@ -228,7 +290,7 @@ struct grid_layout {
     }
 
     //--------------------------------------------------------------------------
-    //
+    // get the rectangle corresponding to the cell with index i.
     //--------------------------------------------------------------------------
     rect get_cell_rect_(size_t const i) const {
         auto const sz = params_.cell_size;
@@ -249,7 +311,7 @@ struct grid_layout {
     }
 
     //--------------------------------------------------------------------------
-    //
+    // for all cells, merge all intersecting rectangles into rectangle unions.
     //--------------------------------------------------------------------------
     void merge_cell_rects_(cell_t& cell) {
         auto const n = cell.size();
@@ -261,7 +323,7 @@ struct grid_layout {
                 auto& u1 = cell[j];
 
                 if (u0.intersects(u1)) {
-                    u0 = rect_union_t::merge(std::move(u0), std::move(u1));
+                    u1 = rect_union_t::merge(std::move(u0), std::move(u1));
                 }
             }
         }
@@ -277,7 +339,8 @@ struct grid_layout {
     }
 
     //--------------------------------------------------------------------------
-    //
+    // once, for all empty cells, shift a neighboring cell's contents toward the
+    // the empty cell by a random amount.
     //--------------------------------------------------------------------------
     void shift_cell_rects_(random_t& random) {
         tez::flat_set<size_t> used;
@@ -345,60 +408,6 @@ struct grid_layout {
             }
         });
     }
-
-    //--------------------------------------------------------------------------
-    //
-    //--------------------------------------------------------------------------
-    std::vector<rect_union_t> operator()(random_t& random) {
-        return (*this)(params_t{}, random);
-    }
-
-    std::vector<rect_union_t> operator()(
-        params_t const params
-      , random_t& random
-    ) {
-        params_ = params;
-
-        make_generators_();
-
-        size_t const cell_count = params_.cells_h * params_.cells_w;
-
-        cells_.clear();
-        cells_.resize(cell_count);
-
-        //----------------------------------------------------------------------
-        // for each cell, generate a random number of rooms and merge.
-        //----------------------------------------------------------------------
-        for_each_i(cells_, [&](cell_t& cell, size_t const i) {
-            auto const cell_rect = get_cell_rect_(i);
-
-            auto const count = count_gen_(random);
-            for (auto n = 0; n < count; ++n) {
-                auto const room_rect = generate_rect_(cell_rect, random);
-                cell.emplace_back(room_rect);
-            }
-
-            merge_cell_rects_(cell);
-        });
-       
-        shift_cell_rects_(random);
-
-        //----------------------------------------------------------------------
-        // merge the contents of all the cells into one vector.
-        //----------------------------------------------------------------------
-        std::vector<rect_union_t> result;
-        result.reserve(cell_count);
-
-        for (auto& cell : cells_) {
-            for (auto& rect : cell) {
-                if (!rect.empty()) {
-                    result.emplace_back(rect);
-                }
-            }
-        }
-
-        return result;
-    }
 };
 
 ////
@@ -461,9 +470,20 @@ public:
         renderer2d_.set_transform(m);
         renderer2d_.clear();
 
-        renderer2d_.set_color_brush(bklib::renderer2d::color {{1.0f, 1.0f, 1.0f}});
+        auto const c1 = bklib::renderer2d::color {{1.0f, 1.0f, 1.0f}};
+        auto const c2 = bklib::renderer2d::color {{1.0f, 0.0f, 1.0f}};
 
-        for (auto const& u : rects_) {
+        renderer2d_.set_color_brush(c1);
+
+        for (size_t i = 0; i < rects_.size(); ++i) {
+            auto const& u = rects_[i];
+
+            if (i != index_) {
+                renderer2d_.set_color_brush(c1);
+            } else {
+                renderer2d_.set_color_brush(c2);
+            }
+
             for (auto const& rect : u) {
                  auto const r = bklib::renderer2d::rect(
                     rect.left() * 32
@@ -522,7 +542,38 @@ public:
     void on_mouse_move_to(bklib::mouse& mouse, int x, int y) {
     }
     void on_mouse_down(bklib::mouse& mouse, unsigned button) {
+        glm::mat3 m {1.0f};
+    
+        auto inv_trans = translate_;
+        auto inv_scale = scale_;
+
+        inv_trans[2].x = -inv_trans[2].x;
+        inv_trans[2].y = -inv_trans[2].y;
+
+        inv_scale[0][0] = 1.0f / inv_scale[0][0];
+        inv_scale[1][1] = 1.0f / inv_scale[1][1];
+
+        m = inv_scale*inv_trans*m;
+
+        glm::vec3 v {
+            mouse.absolute().x
+          , mouse.absolute().y
+          , 1.0f
+        };
+
+        v = m*v;
+
+        bklib::point2d<int> const  p {v.x / 32, v.y / 32};
+
+        index_ = -1;
+        for (size_t i = 0; i < rects_.size(); ++i) {
+            if (rects_[i].intersects(p)) {
+                index_ = i;
+                break;
+            }
+        }
     }
+
     void on_mouse_up(bklib::mouse& mouse, unsigned button) {
     }
 
@@ -598,6 +649,8 @@ private:
     glm::mat3 translate_;
 
     std::vector<rect_union<int>> rects_;
+
+    int index_ = -1;
 };
 
 int main(int argc, char const* argv[]) try {
