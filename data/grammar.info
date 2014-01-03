@@ -1,0 +1,129 @@
+/////////////////////////////
+// Item definitions
+/////////////////////////////
+// example
+/*******************************************************************************
+[   
+    ["en", "an english string"]
+    ["jp", "a japanese string"]
+]
+*******************************************************************************/
+LANG_STRING_LIST
+    [LANG_STRING*]
+LANG_STRING
+    [LANG_STRING_ID, LANG_STRING_VALUE]
+LANG_STRING_ID
+    string
+LANG_STRING_VALUE
+    string
+
+/////////////////////////////
+// Key bindings definitions
+/////////////////////////////
+/*
+{ "bindings" :
+[
+    ["command1", [
+        ["binding1_key1", "binding1_key2"]
+        ["binding2_key1", "binding2_key2"]
+    ]]
+]
+}
+*/
+ROOT
+    {"bindings": KEY_BINDING_LIST}
+KEY_BINDING_LIST
+    [KEY_BINDING*]
+KEY_BINDING
+    [BINDING_NAME, BINDING_LIST]
+BINDING_NAME
+    string
+BINDING_LIST
+    [BINDING*]
+BINDING
+    [KEY_LIST*]
+KEY_LIST
+    string
+    
+/////////////////////////////
+// Item definitions
+/////////////////////////////
+ROOT
+    {"items": ITEM_LIST}
+ITEM_LIST
+    [ITEM*]
+ITEM
+    {
+     ITEM_ID, ITEM_CATEGORY, ITEM_TYPE,
+     ITEM_TAG_LIST, ITEM_ATTR_LIST, ITEM_BASE_VALUE
+     ITEM_WEIGHT, ITEM_NAME, ITEM_DESC
+    }
+ITEM_ID
+    "id": string
+ITEM_CATEGORY
+    "category": string
+ITEM_TYPE
+    "type": string
+ITEM_TAG_LIST
+    "tags": [ITEM_TAG*]
+ITEM_TAG
+    string
+ITEM_WEIGHT
+    "weight": integer
+ITEM_BASE_VALUE
+    "base_value": integer
+ITEM_ATTR_LIST
+    "attributes": [ITEM_ATTR*]
+ITEM_ATTR
+    [ATTR_NAME, ATTR_VALUE]
+ATTR_NAME
+    string
+ATTR_VALUE
+    string | integer | float
+ITEM_NAME
+    LANG_STRING_LIST
+ITEM_DESC
+    LANG_STRING_LIST
+//////////////////////////////
+// Loot table definitions
+/////////////////////////////
+ROOT
+    {"tables": TABLE_LIST}
+TABLE_LIST
+    [TABLE*]
+TABLE
+    {TABLE_ID, TABLE_DEF}
+TABLE_ID
+    "id": string
+TABLE_DEF
+    "table": [TABLE_ENTRY*]
+TABLE_ENTRY
+    [ENTRY_WEIGHT, ENTRY_TYPE, ENTRY_ID, ENTRY_AMOUNT]
+ENTRY_WEIGHT
+    integer
+ENTRY_TYPE
+    // "table" - ENTRY_ID refers to another table.
+    // "item" - ENTRY_ID refers to an item.
+    string
+ENTRY_ID
+    string
+ENTRY_AMOUNT
+    DISTRIBUTION | null
+DISTRIBUTION
+    DIST_UNIFORM | DIST_NORMAL | DIST_FIXED
+DIST_UNIFORM
+    ["uniform", MIN, MAX]
+DIST_NORMAL
+    ["normal", MEAN, STDDEV]
+DIST_FIXED
+    ["fixed", VALUE]
+MIN
+    integer
+MAX
+    integer
+MEAN
+    integer
+STDDEV
+    integer
+VALUE
+integer

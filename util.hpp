@@ -161,17 +161,16 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 class parser_base_common {
 public:
-    using cref       = bklib::json::cref;
-    using utf8string = bklib::utf8string;
+    using cref = bklib::json::cref;
 
     parser_base_common() = default;
 
-    explicit parser_base_common(bklib::utf8string const& file_name)
+    explicit parser_base_common(utf8string const& file_name)
       : parser_base_common{std::ifstream{file_name}}
     {
     }
 
-    explicit parser_base_common(bklib::platform_string const& file_name)
+    explicit parser_base_common(platform_string const& file_name)
       : parser_base_common{std::ifstream{file_name}} //TODO
     {
     }
@@ -210,6 +209,45 @@ public :
     void parse(cref json_value) {
         static_cast<Derived*>(this)->rule_root(json_value);
     }
+};
+
+namespace detail {
+    inline Json::Value parse_json(std::istream& in) {
+        if (!in) {
+            BK_DEBUG_BREAK(); //TODO
+        }
+
+        Json::Reader reader;
+        Json::Value  root;
+
+        auto const result = reader.parse(in, root);
+        if (!result) {
+            std::cout << reader.getFormattedErrorMessages();
+            BK_DEBUG_BREAK(); //TODO
+        }
+
+        return root;
+    }
+} //namespace detail
+
+template <typename Derived>
+class parser_base_t {
+public:
+    using cref = bklib::json::cref;
+
+    void parse(string_ref file_name) {
+        auto in = std::ifstream {file_name};
+        parse(in);
+    }
+
+    void parse(std::istream& in) {
+        auto root = detail::parse_json(in);
+        static_cast<Derived*>(this)->rule_root(root);
+    }
+
+    void parse(cref json_value) {
+        static_cast<Derived*>(this)->rule_root(json_value);
+    }    
 };
 
 } //namespace tez
