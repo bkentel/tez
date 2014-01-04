@@ -254,7 +254,7 @@ public:
         if (auto const target = find_topmost_at(x, y)) {
             target->on_mouse_down(mouse, x, y, button);
         }
- 
+
     }
 
     virtual void on_mouse_up(bklib::mouse& mouse, scalar x, scalar y, unsigned button) override {
@@ -354,7 +354,7 @@ public:
 
         BK_ASSERT(state_ == state::none);
 
- 
+
         auto const& bounds = widget_.bounds();
 
         scalar const dl =  (x - bounds.left()   );
@@ -371,7 +371,7 @@ public:
         BK_ASSERT(!(is_t || is_b) || is_t ^ is_b);
 
         size_t const value =
- 
+
             (is_l ? bklib::get_enum_value(state::left)   : 0)
           | (is_t ? bklib::get_enum_value(state::top)    : 0)
           | (is_r ? bklib::get_enum_value(state::right)  : 0)
@@ -423,7 +423,7 @@ public:
         auto const update_side = [](scalar& side, scalar const delta, scalar const offset) {
             if      (delta > 0 && offset > 0) side += delta;
             else if (delta < 0 && offset < 0) side += delta;
- 
+
         };
 
         if (state_contains(state::left)) {
@@ -441,7 +441,7 @@ public:
             update_side(b, delta.y, off_b);
             adjust_b();
         }
- 
+
 
         auto const new_bounds = bounding_box{l, t, r, b};
         widget_.resize(new_bounds);

@@ -105,8 +105,8 @@ public:
         auto const r = rects_.begin()->base;
 
         if (dx < 0)      return r.left();
-        else if (dx > 0) return r.right();
-        else             return r.left() + r.width() / 2;
+        else if (dx > 0) return r.right() - 1;
+        else             return r.left() + r.width() / 2; //TODO
     }
 
     int py(int dx, int dy) const BK_NOEXCEPT {
@@ -114,8 +114,8 @@ public:
         auto const r = rects_.begin()->base;
 
         if (dy < 0)      return r.top();
-        else if (dy > 0) return r.bottom();
-        else             return r.top() + r.width() / 2;
+        else if (dy > 0) return r.bottom() - 1;
+        else             return r.top() + r.height() / 2; //TODO
 
     }
     ////////////////////////////////////////////////////////////////////////////
@@ -248,7 +248,7 @@ public:
     struct params_t {
         //! grid cell size
         int cell_size = 10;
-        
+
         //! min size for rectangles generated; must be >= 3.
         int rect_min_size = 3;
         //! max size for rectangles generated; must be < cell_size.
@@ -672,33 +672,6 @@ struct directed_walk {
     using random_t = tez::random_t;
 
     bool rule(tile_grid::block const& b) const {
-        //auto const is_floor = [](tile_data const* data) {
-        //    return data->type == tile_data::tile_type::floor ? 1 : 0;
-        //};
-
-        //auto const is_corridor = [](tile_data const* data) {
-        //    return data->type == tile_data::tile_type::corridor ? 1 : 0;
-        //};
-
-        //int const floor_ns =
-        //    is_floor(b[0][0]) + is_floor(b[0][1]) + is_floor(b[0][2])
-        //  + is_floor(b[2][0]) + is_floor(b[2][1]) + is_floor(b[2][2]);
-
-        //int const floor_ew =
-        //    is_floor(b[0][0]) + is_floor(b[0][2])
-        //  + is_floor(b[1][0]) + is_floor(b[1][2])
-        //  + is_floor(b[2][0]) + is_floor(b[2][2]);
-
-        //int const corridor_ns = is_corridor(b[0][1]) + is_corridor(b[2][1]);
-        //int const corridor_ew = is_corridor(b[1][0]) + is_corridor(b[1][2]);
-
-        //return (floor_ns == 0 && floor_ew == 0)
-        //    || (floor_ns == 3 && floor_ew == 2 && corridor_ew == 0)
-        //    || (floor_ns == 6 && floor_ew == 4 && corridor_ew == 0)
-        //    || (floor_ns == 2 && floor_ew == 3 && corridor_ns == 0)
-        //    || (floor_ns == 4 && floor_ew == 6 && corridor_ns == 0)
-        //;
-
         auto const is_floor = [](tile_data const* data) {
             return data->type == tile_data::tile_type::floor ? 1 : 0;
         };
@@ -755,6 +728,10 @@ struct directed_walk {
 
         auto x = start_x;
         auto y = start_y;
+
+        BK_ASSERT(grid.is_valid_index(x, y));
+        BK_ASSERT(grid.at(x, y).type == tile_data::tile_type::floor);
+        BK_ASSERT(grid.at(x, y).room_id == start_room);
 
         boost::container::flat_set<int> connections;
         connections.reserve(10);
@@ -933,15 +910,15 @@ public:
         });
 
         window_.listen(bklib::on_mouse_down{
-            bind(&game_main::on_mouse_down, this, _1, _2)
+            bind(&game_main::on_mouse_down, this, _1, _2, _3, _4)
+        });
+
+        window_.listen(bklib::on_mouse_up{
+            bind(&game_main::on_mouse_up, this, _1, _2, _3, _4)
         });
 
         window_.listen(bklib::on_mouse_wheel_v{
             bind(&game_main::on_mouse_wheel_v, this, _1, _2)
-        });
-
-        window_.listen(bklib::on_mouse_up{
-            bind(&game_main::on_mouse_up, this, _1, _2)
         });
 
         window_.listen(bklib::on_keydown{
@@ -991,14 +968,14 @@ public:
         //    }
         //}
 
-        renderer2d_.set_color_brush(bklib::renderer2d::color {{0.0f, 0.0f, 0.0f}});
+        //renderer2d_.set_color_brush(bklib::renderer2d::color {{0.0f, 0.0f, 0.0f}});
 
-        for (float y = 0.0f; y < 100.0f; y += 10.0f) {
-            for (float x = 0.0f; x < 100.0f; x += 10.0f) {
-                bklib::renderer2d::rect const r = {x*32, y*32, (x + 10) *32, (y + 10) *32};
-                renderer2d_.draw_rect(r, 1.0f / scale_[0][0]);
-            }
-        }
+        //for (float y = 0.0f; y < 100.0f; y += 10.0f) {
+        //    for (float x = 0.0f; x < 100.0f; x += 10.0f) {
+        //        bklib::renderer2d::rect const r = {x*32, y*32, (x + 10) *32, (y + 10) *32};
+        //        renderer2d_.draw_rect(r, 1.0f / scale_[0][0]);
+        //    }
+        //}
 
         //for (auto const& cell : map_) {
         //    if (cell.value.type == tez::tile_type::empty) continue;
@@ -1041,7 +1018,7 @@ public:
         if (left_button) {
             auto const time = std::chrono::duration_cast<std::chrono::milliseconds>(bklib::clock_t::now() - left_button.time);
 
-            if (time > std::chrono::milliseconds{100}) {
+            if (time > std::chrono::milliseconds{1000}) {
                 auto const& last = mouse.absolute(1);
 
                 auto const dx = x - last.x;
@@ -1053,7 +1030,7 @@ public:
         }
     }
 
-    void on_mouse_down(bklib::mouse& mouse, unsigned button) {
+    void on_mouse_down(bklib::mouse& mouse, int x, int y, unsigned button) {
         glm::mat3 m {1.0f};
 
         auto inv_trans = translate_;
@@ -1088,7 +1065,7 @@ public:
         //}
     }
 
-    void on_mouse_up(bklib::mouse& mouse, unsigned button) {
+    void on_mouse_up(bklib::mouse& mouse, int x, int y, unsigned button) {
     }
 
     void on_mouse_wheel_v(bklib::mouse& mouse, int delta) {
@@ -1164,7 +1141,7 @@ private:
 
 int main(int argc, char const* argv[]) try {
     game_main game;
- 
+
     return game.run();
 } catch (bklib::exception_base const&) {
     BK_DEBUG_BREAK(); //TODO
