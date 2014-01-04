@@ -247,7 +247,7 @@ public:
 
     void parse(cref json_value) {
         static_cast<Derived*>(this)->rule_root(json_value);
-    }    
+    }
 };
 
 } //namespace tez

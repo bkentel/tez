@@ -41,7 +41,7 @@ public:
     const_iterator end()   const { return rects_.end(); }
 
     iterator begin() { return rects_.begin(); }
-    iterator end()   { return rects_.end(); }   
+    iterator end()   { return rects_.end(); }
 
     ////////////////////////////////////////////////////////////////////////////
     // properties
@@ -199,7 +199,7 @@ private:
 //            return bklib::intersects(other, r);
 //        });
 //    }
-//    
+//
 //    bool intersects(rect_union const& other) const {
 //        return std::any_of(std::cbegin(other), std::cend(other), [&](rect const& r) {
 //            return intersects(r);
@@ -247,7 +247,7 @@ private:
 //        for (auto const& r : from) {
 //            to.add(r);
 //        }
-//        
+//
 //        from.rects.resize(0);
 //        rect_union result = std::move(to);
 //
@@ -382,7 +382,7 @@ public:
 
             merge_cell_rects_(cell);
         });
-       
+
         shift_cell_rects_(random);
 
         //----------------------------------------------------------------------
@@ -450,7 +450,7 @@ private:
         auto const x1 = x0 + w;
         auto const y1 = y0 + h;
 
-        return rect {x0, y0, x1, y1}; 
+        return rect {x0, y0, x1, y1};
     }
 
     //--------------------------------------------------------------------------
@@ -574,7 +574,7 @@ private:
                 //ok; mark neighbor as used
                 used.insert(j);
 
-                int const delta_min = 1; 
+                int const delta_min = 1;
                 int const delta_max = params_.cell_size - 1;
                 int const delta = dist_uniform {delta_min, delta_max}(random);
 
@@ -587,7 +587,7 @@ private:
                     case 3 : u.translate(0,      -delta); break;
                     }
                 }
-                
+
                 //done this cell
                 break;
             }
@@ -665,7 +665,7 @@ struct level {
     {
         generate(random);
     }
-    
+
     void generate(random_t& random) {
         room_defs_ = grid_layout{}(random);
 
@@ -770,7 +770,7 @@ public:
         });
         window_.listen(bklib::on_keyrepeat{
             bind(&game_main::on_keyrepeat, this, _1, _2)
-        });          
+        });
     }
 
     void render() {
@@ -873,7 +873,7 @@ public:
 
     void on_mouse_down(bklib::mouse& mouse, unsigned button) {
         glm::mat3 m {1.0f};
-    
+
         auto inv_trans = translate_;
         auto inv_scale = scale_;
 
@@ -931,7 +931,7 @@ public:
         case tez::command_t::DIR_WEST :
             translate_[2].x -= 5.0f; break;
         }
-        
+
     }
 
     void on_keyup(bklib::keyboard& keyboard, bklib::keycode key) {

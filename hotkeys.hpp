@@ -127,7 +127,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! Return the binding matching @p keys; otherwise return command_t::NOT_FOUND.
-    //--------------------------------------------------------------------------    
+    //--------------------------------------------------------------------------
     command_t match(key_combo const& keys) const;
 private:
     detail::container_t mappings_;
