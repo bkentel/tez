@@ -15,6 +15,57 @@ namespace tez {
 using random_t  = std::mt19937;
 }
 
+template <typename Container, typename Function>
+inline void for_each_i(Container& container, Function function) {
+    using value_t = typename Container::value_type;
+
+    size_t i = 0;
+
+    std::for_each(std::begin(container), std::end(container), [&](value_t& value) {
+        function(value, i++);
+    });
+}
+
+template <typename Test, typename Fail>
+using if_void_t = typename std::conditional<
+    std::is_void<Test>::value
+  , Fail
+  , Test
+>::type;
+
+template <typename T>
+inline T clamp(T value, T min, T max) {
+    return (value < min)
+      ? min
+      : (value > max)
+        ? max
+        : value
+    ;
+}
+
+template <typename Test, typename Result = void>
+using enable_if_integral_t = typename std::enable_if<
+    std::is_integral<Test>::value
+  , Result
+>::type;
+
+template <typename Test, typename Result = void>
+using enable_if_float_t = typename std::enable_if<
+    std::is_floating_point<Test>::value
+  , Result
+>::type;
+
+
+template <typename T, enable_if_integral_t<T>* = nullptr>
+inline T ceil_div(T const dividend, T const divisor) {
+    return (dividend / divisor) + ((dividend % divisor) ? 1 : 0);
+}
+
+template <typename T, enable_if_float_t<T>* = nullptr>
+inline T ceil_div(T const dividend, T const divisor) {
+    return std::ceil(dividend / divisor);
+}
+
 class room_rect_set {
 public:
     ////////////////////////////////////////////////////////////////////////////
@@ -49,6 +100,24 @@ public:
     bool   empty() const BK_NOEXCEPT { return rects_.empty(); }
     size_t size()  const BK_NOEXCEPT { return rects_.size(); }
 
+    int px(int dx, int dy) const BK_NOEXCEPT {
+        BK_ASSERT(!empty());
+        auto const r = rects_.begin()->base;
+
+        if (dx < 0)      return r.left();
+        else if (dx > 0) return r.right();
+        else             return r.left() + r.width() / 2;
+    }
+
+    int py(int dx, int dy) const BK_NOEXCEPT {
+        BK_ASSERT(!empty());
+        auto const r = rects_.begin()->base;
+
+        if (dy < 0)      return r.top();
+        else if (dy > 0) return r.bottom();
+        else             return r.top() + r.width() / 2;
+
+    }
     ////////////////////////////////////////////////////////////////////////////
     // lifetime
     ////////////////////////////////////////////////////////////////////////////
@@ -174,161 +243,57 @@ private:
     container_t rects_;
 };
 
-//template <typename T>
-//struct rect_union {
-//    using rect = bklib::axis_aligned_rect<T>;
-//    using container_t = std::vector<rect>;
-//    using iterator = typename container_t::iterator;
-//    using const_iterator = typename container_t::const_iterator;
-//
-//    rect_union() = default;
-//
-//    explicit rect_union(rect r) {
-//        add(r);
-//    }
-//
-//    const_iterator begin() const { return rects.begin(); }
-//    const_iterator end()   const { return rects.end(); }
-//
-//    iterator begin() { return rects.begin(); }
-//    iterator end()   { return rects.end(); }
-//
-//    template <typename U>
-//    bool intersects(U const& other) const {
-//        return std::any_of(std::cbegin(rects), std::cend(rects), [&](rect const& r) {
-//            return bklib::intersects(other, r);
-//        });
-//    }
-//
-//    bool intersects(rect_union const& other) const {
-//        return std::any_of(std::cbegin(other), std::cend(other), [&](rect const& r) {
-//            return intersects(r);
-//        });
-//    }
-//
-//    bool empty() const { return rects.empty(); }
-//
-//    size_t size() const { return rects.size(); }
-//
-//    void add(rect const& r) {
-//        rects.push_back(r);
-//    }
-//
-//    rect bounds() const {
-//        BK_ASSERT(!empty());
-//
-//        auto x0 = std::numeric_limits<T>::max();
-//        auto y0 = std::numeric_limits<T>::max();
-//        auto x1 = std::numeric_limits<T>::min();
-//        auto y1 = std::numeric_limits<T>::min();
-//
-//        for (auto const& r : rects) {
-//            x0 = std::min(x0, r.left());
-//            y0 = std::min(y0, r.top());
-//            x1 = std::min(x1, r.right());
-//            y1 = std::min(y1, r.bottom());
-//        }
-//
-//        return {x0, y0, x1, y1};
-//    }
-//
-//    void move(T dx, T dy) {
-//        for (auto& rect : rects) {
-//            rect.move(dx, dy);
-//        }
-//    }
-//
-//    static rect_union merge(rect_union&& a, rect_union&& b) {
-//        rect_union& from = a.rects.capacity() <   b.rects.capacity() ? a : b;
-//        rect_union& to   = a.rects.capacity() >=  b.rects.capacity() ? a : b;
-//
-//        to.rects.reserve(from.size() + to.size());
-//
-//        for (auto const& r : from) {
-//            to.add(r);
-//        }
-//
-//        from.rects.resize(0);
-//        rect_union result = std::move(to);
-//
-//        return result;
-//    }
-//
-//    container_t rects;
-//};
-
-template <typename Container, typename Function>
-inline void for_each_i(Container& container, Function function) {
-    using value_t = typename Container::value_type;
-
-    size_t i = 0;
-
-    std::for_each(std::begin(container), std::end(container), [&](value_t& value) {
-        function(value, i++);
-    });
-}
-
-template <typename Test, typename Fail>
-using if_void_t = typename std::conditional<
-    std::is_void<Test>::value
-  , Fail
-  , Test
->::type;
-
-template <typename T>
-inline T clamp(T value, T min, T max) {
-    return (value < min)
-      ? min
-      : (value > max)
-        ? max
-        : value
-    ;
-}
-
-template <typename Test, typename Result = void>
-using enable_if_integral_t = typename std::enable_if<
-    std::is_integral<Test>::value
-  , Result
->::type;
-
-template <typename Test, typename Result = void>
-using enable_if_float_t = typename std::enable_if<
-    std::is_floating_point<Test>::value
-  , Result
->::type;
-
-
-template <typename T, enable_if_integral_t<T>* = nullptr>
-inline T ceil_div(T const dividend, T const divisor) {
-    return (dividend / divisor) + ((dividend % divisor) ? 1 : 0);
-}
-
-template <typename T, enable_if_float_t<T>* = nullptr>
-inline T ceil_div(T const dividend, T const divisor) {
-    return std::ceil(dividend / divisor);
-}
-
 class grid_layout {
 public:
     struct params_t {
+        //! grid cell size
         int cell_size = 10;
-
+        
+        //! min size for rectangles generated; must be >= 3.
         int rect_min_size = 3;
-        int rect_max_size = 9;
+        //! max size for rectangles generated; must be < cell_size.
+        int rect_max_size = cell_size - 1;
 
+        //! mean size of generated rectangles.
         float rect_size_mean   = 5.0f;
+        //! stddev for the size of generated rectangles.
         float rect_size_stddev = 3.0f;
 
+        //! mean number of generated rectangles per "room".
         float rects_per_cell_mean   = 1.0f;
+        //! stddev for the number of generated rectangles per "room".
         float rects_per_cell_stddev = 1.0f;
 
+        //! probability that a given rect will have a "hole" in it.
         float hole_probability = 0.25f;
 
+        //! width of the play field.
         int field_w = 100;
+        //! height of the play field.
         int field_h = 100;
 
         int cells_w = field_w / cell_size;
         int cells_h = field_h / cell_size;
+
+        bool validate() {
+            static int const MIN_RECT_SIZE = 3;
+
+            if (cell_size < MIN_RECT_SIZE + 1) {
+                cell_size = MIN_RECT_SIZE + 1;
+            }
+
+            if (rect_min_size < MIN_RECT_SIZE) {
+                rect_min_size = MIN_RECT_SIZE;
+            }
+
+            if (rect_max_size > cell_size - 1) {
+                rect_max_size = cell_size - 1;
+            }
+
+            if (rect_max_size > cell_size - 1) {
+                rect_min_size = cell_size - 1;
+            }
+        }
     };
     //--------------------------------------------------------------------------
     using rect         = bklib::axis_aligned_rect<int>;
@@ -373,7 +338,9 @@ public:
                 auto const room_rect = generate_rect_(cell_rect, random);
                 cell.emplace_back(room_rect);
 
-                if (hole_gen(random) <= params_.hole_probability) {
+                if ( room_rect.width() >= 5 && room_rect.height() >= 5 &&
+                    hole_gen(random) <= params_.hole_probability
+                ) {
                     auto const hole_rect = generate_hole_(room_rect, random);
                     auto& room = cell.back();
                     room.subtract(room.begin(), hole_rect);
@@ -436,17 +403,20 @@ private:
         auto const width  = base_rect.width();
         auto const height = base_rect.height();
 
-        auto const w = dist_uniform{1, width  - 2}(random);
-        auto const h = dist_uniform{1, height - 2}(random);
+        auto const w_max = width  - 4;
+        auto const h_max = height - 4;
 
-        auto const x_max = width  - w - 2;
-        auto const y_max = height - h - 2;
+        auto const w = dist_uniform{1, w_max}(random);
+        auto const h = dist_uniform{1, h_max}(random);
 
-        auto const dx = x_max <= 1 ? 1 : dist_uniform(1, x_max)(random);
-        auto const dy = y_max <= 1 ? 1 : dist_uniform(1, y_max)(random);
+        auto const x_max = width  - w - 4;
+        auto const y_max = height - h - 4;
 
-        auto const x0 = base_rect.left() + dx;
-        auto const y0 = base_rect.top()  + dy;
+        auto const dx = x_max < 1 ? 0 : dist_uniform(0, x_max)(random);
+        auto const dy = y_max < 1 ? 0 : dist_uniform(0, y_max)(random);
+
+        auto const x0 = base_rect.left() + dx + 2;
+        auto const y0 = base_rect.top()  + dy + 2;
         auto const x1 = x0 + w;
         auto const y1 = y0 + h;
 
@@ -597,7 +567,7 @@ private:
 
 struct tile_data {
     enum class tile_type : uint16_t {
-        invalid, empty, floor, wall,
+        invalid, empty, corridor, floor, wall,
     };
 
     using room_id_t = uint16_t;
@@ -651,10 +621,192 @@ struct tile_grid {
         }
     }
 
+    inline bool is_valid_index(int const x, int const y) const BK_NOEXCEPT {
+        return x >= 0
+            && static_cast<size_t>(x) < width_
+            && y >= 0
+            && static_cast<size_t>(y) < height_
+        ;
+    }
+
+    using block = std::array<
+        std::array<element_t*, 3>, 3
+    >;
+
+    block block_at(int const x, int const y) {
+        block b;
+
+        for (auto const yi : {-1, 0, 1}) {
+            for (auto const xi : {-1, 0, 1}) {
+                auto const xx = x + xi;
+                auto const yy = y + yi;
+
+                b[yi + 1][xi + 1] = is_valid_index(xx, yy) ? &at(xx, yy) : &at(x, y);
+            }
+        }
+
+        return b;
+    }
+
+
+    template <typename Function>
+    void for_each_neighbor(int const x, int const y, Function function) {
+        for (auto const yi : {-1, 0, 1}) {
+            for (auto const xi : {-1, 0, 1}) {
+                if ((xi | yi) == 0 || !is_valid_index(x + xi, y + yi)) continue;
+                function(xi, yi, at(x + xi, y + yi));
+            }
+        }
+    }
+
+    size_t width()  const BK_NOEXCEPT { return width_; }
+    size_t height() const BK_NOEXCEPT { return height_; }
+
     size_t width_;
     size_t height_;
 
     std::vector<element_t> tiles_;
+};
+
+struct directed_walk {
+    using random_t = tez::random_t;
+
+    bool rule(tile_grid::block const& b) const {
+        //auto const is_floor = [](tile_data const* data) {
+        //    return data->type == tile_data::tile_type::floor ? 1 : 0;
+        //};
+
+        //auto const is_corridor = [](tile_data const* data) {
+        //    return data->type == tile_data::tile_type::corridor ? 1 : 0;
+        //};
+
+        //int const floor_ns =
+        //    is_floor(b[0][0]) + is_floor(b[0][1]) + is_floor(b[0][2])
+        //  + is_floor(b[2][0]) + is_floor(b[2][1]) + is_floor(b[2][2]);
+
+        //int const floor_ew =
+        //    is_floor(b[0][0]) + is_floor(b[0][2])
+        //  + is_floor(b[1][0]) + is_floor(b[1][2])
+        //  + is_floor(b[2][0]) + is_floor(b[2][2]);
+
+        //int const corridor_ns = is_corridor(b[0][1]) + is_corridor(b[2][1]);
+        //int const corridor_ew = is_corridor(b[1][0]) + is_corridor(b[1][2]);
+
+        //return (floor_ns == 0 && floor_ew == 0)
+        //    || (floor_ns == 3 && floor_ew == 2 && corridor_ew == 0)
+        //    || (floor_ns == 6 && floor_ew == 4 && corridor_ew == 0)
+        //    || (floor_ns == 2 && floor_ew == 3 && corridor_ns == 0)
+        //    || (floor_ns == 4 && floor_ew == 6 && corridor_ns == 0)
+        //;
+
+        auto const is_floor = [](tile_data const* data) {
+            return data->type == tile_data::tile_type::floor ? 1 : 0;
+        };
+
+        auto const is_corridor = [](tile_data const* data) {
+            return data->type == tile_data::tile_type::corridor;
+        };
+
+        int const floor_n = is_floor(b[0][0]) + is_floor(b[0][1]) + is_floor(b[0][2]);
+        int const floor_s = is_floor(b[2][0]) + is_floor(b[2][1]) + is_floor(b[2][2]);
+        int const floor_e = is_floor(b[0][2]) + is_floor(b[1][2]) + is_floor(b[2][2]);
+        int const floor_w = is_floor(b[0][0]) + is_floor(b[1][0]) + is_floor(b[2][0]);
+
+        bool const corridor_ew = is_corridor(b[1][0]) || is_corridor(b[1][2]);
+        bool const corridor_ns = is_corridor(b[0][1]) || is_corridor(b[2][1]);
+
+        if (floor_n == 0 && floor_s == 0 && floor_e == 0 && floor_w == 0) {
+            return true;
+        } else if (!corridor_ew && floor_e != 3 && floor_e == floor_w) {
+            return (floor_n == 3 && floor_s == 0)
+                || (floor_n == 0 && floor_s == 3)
+                || (floor_n == 3 && floor_s == 3);
+        } else if (!corridor_ns && floor_n != 3 && floor_n == floor_s) {
+            return (floor_e == 3 && floor_w == 0)
+                || (floor_e == 0 && floor_w == 3)
+                || (floor_e == 3 && floor_w == 3);
+        } else {
+            return false;
+        }
+    }
+
+    boost::container::flat_set<int> operator()(
+        random_t& random, tile_grid& grid
+      , int const start_room
+      , int const start_x,  int const start_y
+      , int const dir_x, int const dir_y
+    ) {
+        BK_ASSERT(std::abs(dir_x) <= 1);
+        BK_ASSERT(std::abs(dir_y) <= 1);
+
+        static float const forward  = 80;
+        static float const left     = 20;
+        static float const right    = 20;
+        static float const backward = 5;
+
+        static float const segment_length_mean   = 5.0f;
+        static float const segment_length_stddev = 3.0f;
+
+        std::discrete_distribution<> direction_gen {
+            forward, left, right, backward
+        };
+
+        std::normal_distribution<float> length_gen {segment_length_mean, segment_length_stddev};
+
+        auto x = start_x;
+        auto y = start_y;
+
+        boost::container::flat_set<int> connections;
+        connections.reserve(10);
+        connections.insert(start_room);
+
+        for (int iterations = 0; iterations < 10; ++iterations) {
+            auto const dir    = direction_gen(random);
+            auto const length = static_cast<int>(std::round(length_gen(random)));
+
+            auto dx = dir_x;
+            auto dy = dir_y;
+
+            switch (dir) {
+            case 0 : break;
+            case 1 : std::tie(dx, dy) = std::make_pair(dy,  dx); break;
+            case 2 : std::tie(dx, dy) = std::make_pair(-dy, -dx); break;
+            case 3 : std::tie(dx, dy) = std::make_pair(-dx, -dy); break;
+            }
+
+            for (int i = 0; i < length; ++i) {
+                if (!grid.is_valid_index(x, y)) {
+                    break; //try another direction TODO
+                }
+
+                auto&      data = grid.at(x, y);
+                auto const type = data.type;
+
+                if (type == tile_data::tile_type::empty) {
+                    auto const block = grid.block_at(x, y);
+
+                    if (rule(block)) {
+                        data.type = tile_data::tile_type::corridor;
+                        data.room_id = start_room;
+                    } else {
+                        break; //try another direction TODO
+                    }
+                } else if (type == tile_data::tile_type::corridor) {
+                    connections.insert(data.room_id);
+                } else if (type == tile_data::tile_type::floor) {
+                    if (data.room_id != start_room) {
+                        connections.insert(data.room_id);
+                        return connections;
+                    }
+                }
+
+                x += dx;
+                y += dy;
+            }
+        }
+
+        return connections;
+    }
 };
 
 struct level {
@@ -676,15 +828,43 @@ struct level {
         tile_hole.type = tile_data::tile_type::empty;
 
         for (size_t i = 0; i < room_defs_.size(); ++i) {
+            auto const& cell = room_defs_[i];
             tile_floor.room_id = i + 1;
 
-            for (auto const& rect : room_defs_[i]) {
+            for (auto const& rect : cell) {
                 grid_.fill_rect(rect.base, tile_floor);
             }
 
-            for (auto const& rect : room_defs_[i]) {
+            for (auto const& rect : cell) {
                 if (rect.has_hole) {
                     grid_.fill_rect(rect.hole, tile_hole);
+                }
+            }
+        }
+
+        static int const vx[] {0,  0, 1, -1};
+        static int const vy[] {1, -1, 0,  0};
+        std::uniform_int_distribution<> dir_gen {0, 3};
+
+        for (size_t i = 0; i < room_defs_.size(); ++i) {
+            auto const& cell = room_defs_[i];
+
+            auto const start_dir = dir_gen(random);
+
+            for (int j = 0; j < 4; ++j) {
+                auto const dir = (start_dir + j) % 4;
+
+                auto const dx = vx[dir];
+                auto const dy = vy[dir];
+
+                auto result = directed_walk {}(
+                    random, grid_, i+1
+                  , cell.px(dx, dy), cell.py(dx, dy)
+                  , dx, dy
+                );
+
+                if (result.size() > 1) {
+                    break;
                 }
             }
         }
@@ -706,6 +886,8 @@ struct level {
 
             if (data.type == tile_data::tile_type::empty) {
                 renderer.set_color_brush(color_t{{1.0f, 0.0f, 0.0f}});
+            } else if (data.type == tile_data::tile_type::corridor) {
+                renderer.set_color_brush(color_t{{0.2f, 0.2f, 0.5f}});
             } else {
                 //auto const color_val = data.room_id * 123;
                 //float const r = ((color_val & 0x0000FF) >> 0)  / 255.0f;
@@ -894,6 +1076,8 @@ public:
         v = m*v;
 
         bklib::point2d<int> const  p {v.x / 32, v.y / 32};
+
+        std::cout << "x: " << p.x << "y: " << p.y << std::endl;
 
         //index_ = -1;
         //for (size_t i = 0; i < rects_.size(); ++i) {
